@@ -1,16 +1,18 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import './ai_Image/linkImage.dart';
 
-void main() {
+void main() async {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // checkerboardRasterCacheImages: true,
       title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -55,7 +57,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 '$_counter',
                 style: Theme.of(context).textTheme.headline4,
               ),
-              // Image(),
+              Image.network(
+                width: MediaQuery.of(context).size.width / 2,
+                height: MediaQuery.of(context).size.width / 2,
+                imageListLink[_counter],
+                cacheWidth: 1000,
+                fit: BoxFit.cover,
+              ),
               Row(children: <Widget>[
                 Expanded(
                     flex: 2,
