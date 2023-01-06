@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import './ai_Image/linkImage.dart';
 
@@ -42,6 +44,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    int randomNumber = Random().nextInt(imageListLink.length);
+    final odp =
+        randomNumber.isOdd ? imageListLink[_counter] : imageListLink[_counter];
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -58,18 +64,27 @@ class _MyHomePageState extends State<MyHomePage> {
                 style: Theme.of(context).textTheme.headline4,
               ),
               Image.network(
-                width: MediaQuery.of(context).size.width / 2,
-                height: MediaQuery.of(context).size.width / 2,
-                imageListLink[_counter],
-                cacheWidth: 1000,
-                fit: BoxFit.cover,
-              ),
+                  width: MediaQuery.of(context).size.width / 2,
+                  height: MediaQuery.of(context).size.width / 2,
+                  cacheWidth: 1000,
+                  odp, frameBuilder:
+                      (context, child, frame, wasSynchronouslyLoaded) {
+                return child;
+              }, loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) {
+                  return child;
+                } else {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+              }),
               Row(children: <Widget>[
                 Expanded(
                     flex: 2,
                     child: FloatingActionButton.extended(
-                      onPressed: () async => {},
-                      label: Text('1',
+                      onPressed: () async => {_incrementCounter()},
+                      label: Text('AI',
                           maxLines: 10,
                           softWrap: false,
                           style: TextStyle(
@@ -81,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     flex: 2,
                     child: FloatingActionButton.extended(
                       onPressed: () async => {_incrementCounter()},
-                      label: Text('2',
+                      label: Text('Human',
                           maxLines: 10,
                           softWrap: false,
                           style: TextStyle(
