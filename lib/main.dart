@@ -1,10 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:async';
 import 'package:http/http.dart';
 
 import 'package:flutter/material.dart';
 import './ai_Image/linkImage.dart';
+
+// import 'package:queue/queue.dart';
+import 'dart:collection';
 
 void main() async {
   runApp(const MyApp());
@@ -48,13 +52,34 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     int randomNumber = Random().nextInt(imageListLink.length);
-    final odp =
+    final imageList =
         randomNumber.isOdd ? imageListLink[_counter] : imageListLink[_counter];
 
-    final Future<String> _getImages = Future<String>.delayed(
-      const Duration(seconds: 2),
-      () => 'Data Loaded',
-    );
+    ListQueue<String> _imageQueue = ListQueue();
+    int _maxQueueSize = 5;
+
+    Future<void> _downloadImage(String imageUrl) async {
+      var response = await http.get(imageUrl);
+      var imageFile = File('path/to/save/image.jpg');
+      await imageFile.writeAsBytes(response.bodyBytes);
+      print('Image downloaded: $imageUrl');
+    }
+
+    Future<void> _processQueue() async {
+      while (_imageQueue.isNotEmpty) {
+        var imageUrl = _imageQueue.removeFirst();
+        await _downloadImage(imageUrl);
+      }
+    }
+
+    Future<void> addImageToQueue(String imageUrl) async {
+      _imageQueue.addLast(imageUrl);
+      if (_imageQueue.length == _maxQueueSize) {
+        await _processQueue();
+      }
+    }
+
+    int currentImageIndex = 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -74,7 +99,7 @@ class _MyHomePageState extends State<MyHomePage> {
               SizedBox(
                 // width: MediaQuery.of(context).size.width / 2,
                 height: MediaQuery.of(context).size.width,
-                child: Image.network(cacheWidth: 1000, odp, frameBuilder:
+                child: Image.network(cacheWidth: 1000, imageList, frameBuilder:
                     (context, child, frame, wasSynchronouslyLoaded) {
                   return child;
                 }, loadingBuilder: (context, child, loadingProgress) {
@@ -123,3 +148,5 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+
+// flutter run -d chrome --web-renderer html
