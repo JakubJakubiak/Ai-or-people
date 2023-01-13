@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
+// import 'dart:ui';
 import 'dart:math';
 import 'dart:async';
-import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 import './ai_Image/linkImage.dart';
@@ -40,7 +42,10 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage>
+    with SingleTickerProviderStateMixin {
+  late AnimationController controller;
+
   int _counter = 0;
 
   void _incrementCounter() {
@@ -54,32 +59,6 @@ class _MyHomePageState extends State<MyHomePage> {
     int randomNumber = Random().nextInt(imageListLink.length);
     final imageList =
         randomNumber.isOdd ? imageListLink[_counter] : imageListLink[_counter];
-
-    ListQueue<String> _imageQueue = ListQueue();
-    int _maxQueueSize = 5;
-
-    Future<void> _downloadImage(String imageUrl) async {
-      var response = await http.get(imageUrl);
-      var imageFile = File('path/to/save/image.jpg');
-      await imageFile.writeAsBytes(response.bodyBytes);
-      print('Image downloaded: $imageUrl');
-    }
-
-    Future<void> _processQueue() async {
-      while (_imageQueue.isNotEmpty) {
-        var imageUrl = _imageQueue.removeFirst();
-        await _downloadImage(imageUrl);
-      }
-    }
-
-    Future<void> addImageToQueue(String imageUrl) async {
-      _imageQueue.addLast(imageUrl);
-      if (_imageQueue.length == _maxQueueSize) {
-        await _processQueue();
-      }
-    }
-
-    int currentImageIndex = 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -97,21 +76,30 @@ class _MyHomePageState extends State<MyHomePage> {
                 style: Theme.of(context).textTheme.headline4,
               ),
               SizedBox(
-                // width: MediaQuery.of(context).size.width / 2,
-                height: MediaQuery.of(context).size.width,
-                child: Image.network(cacheWidth: 1000, imageList, frameBuilder:
-                    (context, child, frame, wasSynchronouslyLoaded) {
-                  return child;
-                }, loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) {
-                    return child;
-                  } else {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-                }),
-              ),
+                  height: MediaQuery.of(context).size.width,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder:
+                        (Widget child, Animation<double> aniamtion) {
+                      return ScaleTransition(scale: aniamtion, child: child);
+                    },
+                    child: Image.network(
+                        cacheWidth: 1000,
+                        imageList,
+                        key: ValueKey<String>(imageListLink[_counter]),
+                        frameBuilder:
+                            (context, child, frame, wasSynchronouslyLoaded) {
+                      return child;
+                    }, loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) {
+                        return child;
+                      } else {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+                    }),
+                  )),
               Padding(
                   padding: const EdgeInsets.all(10),
                   child: Row(children: <Widget>[
@@ -148,5 +136,3 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-
-// flutter run -d chrome --web-renderer html
