@@ -3,13 +3,12 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:math';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:queue/queue.dart';
 
 import 'package:flutter/material.dart';
 import './ai_Image/linkImage.dart';
-
-import 'package:cached_network_image/cached_network_image.dart';
 
 import 'dart:collection';
 
@@ -28,14 +27,13 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Human vs Ai?'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
   final String title;
 
   @override
@@ -46,40 +44,62 @@ class _MyHomePageState extends State<MyHomePage>
     with SingleTickerProviderStateMixin {
   late AnimationController controller;
 
+  bool answer = false;
+  int randomNumber = Random().nextInt(10);
   int _counter = 0;
-  List<String> ai = [];
-  List<String> human = [];
+  List<Map<String, dynamic>> categoryDraw = [];
+  late Timer timer;
 
-  void _incrementCounter() {
+  void _incrementCounter() async {
     setState(() {
       _counter++;
     });
   }
 
   loadImages() async {
-    if (ai.isEmpty) {
+    if (categoryDraw.isEmpty) {
       await Future.forEach(imageListLink, (link) async {
-        ai.add(link);
+        categoryDraw.add({'link': link, 'category': 'ai'});
       });
-      setState(() {
-        ai;
-      });
-    }
-    if (human.isEmpty) {
       await Future.forEach(imageGirls, (link) async {
-        human.add(link);
-      });
-      setState(() {
-        human;
+        categoryDraw.add({'link': link, 'category': 'human'});
       });
     }
+    setState(() {
+      categoryDraw;
+    });
+  }
+
+  randomNumbers() {
+    randomNumber = Random().nextInt(categoryDraw.length);
+    categoryDraw.remove(categoryDraw[randomNumber]);
+  }
+
+  trueOdFalse(context, {required String categoryWin}) async {
+    if (categoryWin == categoryDraw[randomNumber]['category'] &&
+        answer == false) _incrementCounter();
+
+    (answer == false)
+        ? timer = Timer(const Duration(milliseconds: 600), () {
+            setState(() {
+              answer = false;
+              randomNumbers();
+            });
+          })
+        : null;
+
+    setState(() {
+      answer = !answer;
+      if (answer == false) {
+        randomNumbers();
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     loadImages();
-    var categoryDraw = _counter.isOdd ? ai : human;
-    int randomNumber = Random().nextInt(categoryDraw.length);
+    String images = categoryDraw[randomNumber]['link'];
 
     return Scaffold(
         appBar: AppBar(
@@ -90,7 +110,7 @@ class _MyHomePageState extends State<MyHomePage>
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 const Text(
-                  'You have pushed the button this many times:',
+                  'Guess which image was made by human and which by ai?',
                 ),
                 Text(
                   '$_counter',
@@ -99,28 +119,27 @@ class _MyHomePageState extends State<MyHomePage>
                 SizedBox(
                   height: MediaQuery.of(context).size.width,
                   child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    transitionBuilder:
-                        (Widget child, Animation<double> aniamtion) {
-                      return ScaleTransition(scale: aniamtion, child: child);
-                    },
-                    child: Image.network(
-                        cacheWidth: 1000,
-                        categoryDraw[randomNumber],
-                        key: ValueKey<String>('$_counter'),
-                        fit: BoxFit.cover, frameBuilder:
-                            (context, child, frame, wasSynchronouslyLoaded) {
-                      return child;
-                    }, loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) {
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder:
+                          (Widget child, Animation<double> aniamtion) {
+                        return ScaleTransition(scale: aniamtion, child: child);
+                      },
+                      child: Image.network(
+                          cacheWidth: 1000,
+                          images,
+                          key: ValueKey<String>('$randomNumber'),
+                          fit: BoxFit.cover, frameBuilder:
+                              (context, child, frame, wasSynchronouslyLoaded) {
                         return child;
-                      } else {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      }
-                    }),
-                  ),
+                      }, loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) {
+                          return child;
+                        } else {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                      })),
                 ),
                 Padding(
                     padding: const EdgeInsets.all(10),
@@ -129,10 +148,14 @@ class _MyHomePageState extends State<MyHomePage>
                           flex: 2,
                           child: FloatingActionButton.extended(
                             onPressed: () async => {
-                              _incrementCounter(),
-                              categoryDraw.remove(categoryDraw[randomNumber])
+                              HapticFeedback.mediumImpact(),
+                              trueOdFalse(context, categoryWin: 'ai'),
                             },
-                            backgroundColor: const Color(0xff6750a4),
+                            backgroundColor: answer == true
+                                ? categoryDraw[randomNumber]['category'] == 'ai'
+                                    ? const Color.fromARGB(255, 41, 95, 43)
+                                    : const Color.fromARGB(255, 129, 42, 42)
+                                : const Color(0xff6750a4),
                             label: Text('AI',
                                 maxLines: 10,
                                 softWrap: false,
@@ -145,11 +168,16 @@ class _MyHomePageState extends State<MyHomePage>
                       Expanded(
                           flex: 2,
                           child: FloatingActionButton.extended(
-                            backgroundColor: const Color(0xff6750a4),
                             onPressed: () async => {
-                              _incrementCounter(),
-                              categoryDraw.remove(categoryDraw[randomNumber])
+                              HapticFeedback.mediumImpact(),
+                              trueOdFalse(context, categoryWin: 'human'),
                             },
+                            backgroundColor: answer == true
+                                ? categoryDraw[randomNumber]['category'] ==
+                                        'human'
+                                    ? const Color.fromARGB(255, 41, 95, 43)
+                                    : const Color.fromARGB(255, 129, 42, 42)
+                                : const Color(0xff6750a4),
                             label: Text('Human',
                                 maxLines: 10,
                                 softWrap: false,
