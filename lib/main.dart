@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 import './ai_Image/linkImage.dart';
+import './ai_Image/humanimahge.dart';
 
 import 'dart:collection';
 
@@ -27,7 +28,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
       ),
-      home: const MyHomePage(title: 'Human vs Ai?'),
+      home: const MyHomePage(title: 'Human vs Ai'),
     );
   }
 }
@@ -50,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage>
   List<Map<String, dynamic>> categoryDraw = [];
   late Timer timer;
 
-  void _incrementCounter() async {
+  void _incrementCounter() {
     setState(() {
       _counter++;
     });
@@ -61,18 +62,21 @@ class _MyHomePageState extends State<MyHomePage>
       await Future.forEach(imageListLink, (link) async {
         categoryDraw.add({'link': link, 'category': 'ai'});
       });
-      await Future.forEach(imageGirls, (link) async {
+      await Future.forEach(humanImage, (link) async {
         categoryDraw.add({'link': link, 'category': 'human'});
       });
+
+      setState(() {
+        categoryDraw;
+      });
     }
-    setState(() {
-      categoryDraw;
-    });
   }
 
-  randomNumbers() {
-    randomNumber = Random().nextInt(categoryDraw.length);
-    categoryDraw.remove(categoryDraw[randomNumber]);
+  randomNumbers() async {
+    setState(() {
+      randomNumber = Random().nextInt(categoryDraw.length);
+      categoryDraw.remove(categoryDraw[randomNumber]);
+    });
   }
 
   trueOdFalse(context, {required String categoryWin}) async {
