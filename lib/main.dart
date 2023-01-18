@@ -11,10 +11,15 @@ import 'package:flutter/material.dart';
 import './ai_Image/linkImage.dart';
 import './ai_Image/humanimahge.dart';
 
+import 'package:flutter/services.dart';
 import 'dart:collection';
 
 void main() async {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]).then((value) => runApp(const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -23,6 +28,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       checkerboardRasterCacheImages: true,
       title: 'Flutter Demo',
       theme: ThemeData(
@@ -103,7 +109,8 @@ class _MyHomePageState extends State<MyHomePage>
   @override
   Widget build(BuildContext context) {
     loadImages();
-    String images = categoryDraw[randomNumber]['link'];
+    String images =
+        categoryDraw[randomNumber]['link'] ?? categoryDraw[5]['link'];
 
     return Scaffold(
         appBar: AppBar(
@@ -115,6 +122,7 @@ class _MyHomePageState extends State<MyHomePage>
               children: <Widget>[
                 const Text(
                   'Guess which image was made by human and which by ai?',
+                  maxLines: 5,
                 ),
                 Text(
                   '$_counter',
