@@ -52,8 +52,10 @@ class _MyHomePageState extends State<MyHomePage>
   late AnimationController controller;
 
   bool answer = false;
-  int randomNumber = Random().nextInt(10);
+
+  int randomNumber = 0;
   int _counter = 0;
+
   List<Map<String, dynamic>> categoryDraw = [];
   Animation<double>? animation;
   dynamic sizeW;
@@ -62,6 +64,8 @@ class _MyHomePageState extends State<MyHomePage>
   late Timer timer;
   double posValue = 1000.0;
   double posValueHeight = 1000.0;
+
+  PageController _pageController = PageController();
 
   void _incrementCounter() {
     setState(() {
@@ -98,11 +102,17 @@ class _MyHomePageState extends State<MyHomePage>
     posValue = posValue == 0.0 ? sizeW : sizeW;
     posValueHeight = posValueHeight == 0.0 ? sizeH : sizeH;
 
+    timesAnimationAwait() async {
+      await _pageController.animateToPage(_pageController.page!.toInt() + 1,
+          duration: const Duration(milliseconds: 350), curve: Curves.easeInOut);
+      await randomNumbers();
+    }
+
     (answer == false)
         ? timer = Timer(const Duration(milliseconds: 600), () {
+            timesAnimationAwait();
             setState(() {
               answer = false;
-              randomNumbers();
               posValue = sizeW;
               posValueHeight = sizeH;
             });
@@ -115,6 +125,24 @@ class _MyHomePageState extends State<MyHomePage>
         randomNumbers();
       }
     });
+  }
+
+  Widget NexImege(int index) {
+    String images = categoryDraw[index]['link'];
+    return ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Image.network(cacheWidth: 1000, images, fit: BoxFit.cover,
+            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          return child;
+        }, loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) {
+            return child;
+          } else {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+        }));
   }
 
   Future<Size> _calculateImageDimension(images) async {
@@ -143,17 +171,17 @@ class _MyHomePageState extends State<MyHomePage>
   @override
   Widget build(BuildContext context) {
     loadImages();
-
     String images = categoryDraw[randomNumber]['link'];
     _calculateImageDimension(images).then((size) => {print(size)});
 
     return Scaffold(
-        appBar: AppBar(
-          title: Text(widget.title),
-        ),
-        body: Center(
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: <
-              Widget>[
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Center(
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
             const Text(
               'Guess which image was made by human and which by ai?',
               maxLines: 5,
@@ -163,36 +191,26 @@ class _MyHomePageState extends State<MyHomePage>
               style: Theme.of(context).textTheme.headline4,
             ),
             SizedBox(
-                height: MediaQuery.of(context).size.width,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
-                  ),
-                  alignment: Alignment.center,
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    transitionBuilder:
-                        (Widget child, Animation<double> aniamtion) {
-                      return ScaleTransition(scale: aniamtion, child: child);
-                    },
-                    child: Image.network(
-                        cacheWidth: 1000,
-                        images,
-                        key: ValueKey<String>('$randomNumber'),
-                        fit: BoxFit.cover, frameBuilder:
-                            (context, child, frame, wasSynchronouslyLoaded) {
-                      return child;
-                    }, loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) {
-                        return child;
-                      } else {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      }
-                    }),
-                  ),
-                )),
+              height: MediaQuery.of(context).size.width,
+              child: Stack(
+                children: [
+                  Container(
+                      decoration: const BoxDecoration(),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: SizedBox.fromSize(
+                          child: PageView.builder(
+                            controller: _pageController,
+                            itemCount: categoryDraw.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              return NexImege(randomNumber);
+                            },
+                          ),
+                        ),
+                      )),
+                ],
+              ),
+            ),
             Padding(
                 padding: const EdgeInsets.all(10),
                 child: Row(children: <Widget>[
@@ -238,7 +256,7 @@ class _MyHomePageState extends State<MyHomePage>
                             )),
                       ))
                 ]))
-          ]),
-        ));
+          ])),
+    );
   }
 }
