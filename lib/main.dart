@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       checkerboardRasterCacheImages: true,
-      title: 'Flutter Demo',
+      title: 'Human vs Ai',
       theme: ThemeData(
         brightness: Brightness.dark,
       ),
@@ -127,8 +127,8 @@ class _MyHomePageState extends State<MyHomePage>
     });
   }
 
-  Widget NexImege(int index) {
-    String images = categoryDraw[index]['link'];
+  Widget NexImege() {
+    String images = categoryDraw[randomNumber]['link'];
     return ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: Image.network(cacheWidth: 1000, images, fit: BoxFit.cover,
@@ -203,7 +203,7 @@ class _MyHomePageState extends State<MyHomePage>
                             controller: _pageController,
                             itemCount: categoryDraw.length,
                             itemBuilder: (BuildContext context, int index) {
-                              return NexImege(randomNumber);
+                              return NexImege();
                             },
                           ),
                         ),
