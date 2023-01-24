@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import './ai_Image/linkImage.dart';
 import './ai_Image/humanimahge.dart';
 
+import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:flutter/services.dart';
 import 'dart:collection';
 
@@ -53,8 +55,8 @@ class _MyHomePageState extends State<MyHomePage>
 
   bool answer = false;
 
-  int randomNumber = 0;
   int _counter = 0;
+  int currentIndex = 0;
 
   List<Map<String, dynamic>> categoryDraw = [];
   Animation<double>? animation;
@@ -83,20 +85,13 @@ class _MyHomePageState extends State<MyHomePage>
       });
 
       setState(() {
-        categoryDraw;
+        categoryDraw.shuffle();
       });
     }
   }
 
-  randomNumbers() async {
-    setState(() {
-      randomNumber = Random().nextInt(categoryDraw.length);
-      categoryDraw.remove(categoryDraw[randomNumber]);
-    });
-  }
-
   trueOdFalse(context, {required String categoryWin}) async {
-    if (categoryWin == categoryDraw[randomNumber]['category'] &&
+    if (categoryWin == categoryDraw[currentIndex]['category'] &&
         answer == false) _incrementCounter();
 
     posValue = posValue == 0.0 ? sizeW : sizeW;
@@ -105,7 +100,6 @@ class _MyHomePageState extends State<MyHomePage>
     timesAnimationAwait() async {
       await _pageController.animateToPage(_pageController.page!.toInt() + 1,
           duration: const Duration(milliseconds: 350), curve: Curves.easeInOut);
-      await randomNumbers();
     }
 
     (answer == false)
@@ -121,28 +115,7 @@ class _MyHomePageState extends State<MyHomePage>
 
     setState(() {
       answer = !answer;
-      if (answer == false) {
-        randomNumbers();
-      }
     });
-  }
-
-  Widget NexImege() {
-    String images = categoryDraw[randomNumber]['link'];
-    return ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Image.network(cacheWidth: 1000, images, fit: BoxFit.cover,
-            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-          return child;
-        }, loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) {
-            return child;
-          } else {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-        }));
   }
 
   Future<Size> _calculateImageDimension(images) async {
@@ -171,7 +144,8 @@ class _MyHomePageState extends State<MyHomePage>
   @override
   Widget build(BuildContext context) {
     loadImages();
-    String images = categoryDraw[randomNumber]['link'];
+
+    String images = categoryDraw[currentIndex]['link'];
     _calculateImageDimension(images).then((size) => {print(size)});
 
     return Scaffold(
@@ -194,20 +168,26 @@ class _MyHomePageState extends State<MyHomePage>
               height: MediaQuery.of(context).size.width,
               child: Stack(
                 children: [
-                  Container(
-                      decoration: const BoxDecoration(),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: SizedBox.fromSize(
-                          child: PageView.builder(
-                            controller: _pageController,
-                            itemCount: categoryDraw.length,
-                            itemBuilder: (BuildContext context, int index) {
-                              return NexImege();
-                            },
-                          ),
-                        ),
-                      )),
+                  SizedBox.fromSize(
+                    child: PageView.builder(
+                      itemCount: categoryDraw.length,
+                      controller: _pageController,
+                      itemBuilder: (context, index) {
+                        images = categoryDraw[index]['link'];
+
+                        currentIndex = index;
+                        images = categoryDraw[index]['link'];
+
+                        return ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: CachedNetworkImage(
+                              imageUrl: images,
+                              errorWidget: (context, url, error) =>
+                                  const Icon(Icons.error),
+                            ));
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -222,7 +202,7 @@ class _MyHomePageState extends State<MyHomePage>
                           trueOdFalse(context, categoryWin: 'ai'),
                         },
                         backgroundColor: answer == true
-                            ? categoryDraw[randomNumber]['category'] == 'ai'
+                            ? categoryDraw[currentIndex]['category'] == 'ai'
                                 ? const Color.fromARGB(255, 41, 95, 43)
                                 : const Color.fromARGB(255, 129, 42, 42)
                             : const Color(0xff6750a4),
@@ -243,7 +223,7 @@ class _MyHomePageState extends State<MyHomePage>
                           trueOdFalse(context, categoryWin: 'human'),
                         },
                         backgroundColor: answer == true
-                            ? categoryDraw[randomNumber]['category'] == 'human'
+                            ? categoryDraw[currentIndex]['category'] == 'human'
                                 ? const Color.fromARGB(255, 41, 95, 43)
                                 : const Color.fromARGB(255, 129, 42, 42)
                             : const Color(0xff6750a4),
