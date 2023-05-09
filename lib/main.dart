@@ -5,6 +5,7 @@ import 'dart:math';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
@@ -12,12 +13,14 @@ import './ai_Image/linkImage.dart';
 import './ai_Image/humanimahge.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import './modules/ad_bob_service.dart';
 
 import 'package:flutter/services.dart';
 import 'dart:collection';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -31,7 +34,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      checkerboardRasterCacheImages: true,
+      checkerboardRasterCacheImages: false,
       title: 'Human vs Ai',
       theme: ThemeData(
         brightness: Brightness.dark,
@@ -57,6 +60,7 @@ class _MyHomePageState extends State<MyHomePage>
 
   int _counter = 0;
   int currentIndex = 0;
+  BannerAd? _banner;
 
   List<Map<String, dynamic>> categoryDraw = [];
   Animation<double>? animation;
@@ -74,6 +78,14 @@ class _MyHomePageState extends State<MyHomePage>
       _counter++;
     });
   }
+
+  @override
+  void initState() {
+    super.initState();
+    // stateManager.makeGetRequest();
+    _createBanerAd();
+  }
+//  final stateManager = HomePageManager();
 
   loadImages() async {
     if (categoryDraw.isEmpty) {
@@ -96,6 +108,18 @@ class _MyHomePageState extends State<MyHomePage>
 
     posValue = posValue == 0.0 ? sizeW : sizeW;
     posValueHeight = posValueHeight == 0.0 ? sizeH : sizeH;
+
+    // if (posValue == 0.0) {
+    //   posValue = sizeW;
+    // } else {
+    //   posValue = sizeW;
+    // }
+
+    // if (posValueHeight == 0.0) {
+    //   posValueHeight = sizeH;
+    // } else {
+    //   posValueHeight = sizeH;
+    // }
 
     timesAnimationAwait() async {
       await _pageController.animateToPage(_pageController.page!.toInt() + 1,
@@ -141,6 +165,15 @@ class _MyHomePageState extends State<MyHomePage>
     super.dispose();
   }
 
+  void _createBanerAd() async {
+    _banner = BannerAd(
+      size: AdSize.fullBanner,
+      adUnitId: AdMobService.bannerAdUnitId!,
+      listener: AdMobService.bannerAdListener,
+      request: const AdRequest(),
+    )..load();
+  }
+
   @override
   Widget build(BuildContext context) {
     loadImages();
@@ -162,19 +195,19 @@ class _MyHomePageState extends State<MyHomePage>
             ),
             Text(
               '$_counter',
-              style: Theme.of(context).textTheme.headline4,
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
+            const Padding(padding: EdgeInsets.all(10)),
             SizedBox(
               height: MediaQuery.of(context).size.width,
               child: Stack(
                 children: [
                   SizedBox.fromSize(
                     child: PageView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
                       itemCount: categoryDraw.length,
                       controller: _pageController,
                       itemBuilder: (context, index) {
-                        images = categoryDraw[index]['link'];
-
                         currentIndex = index;
                         images = categoryDraw[index]['link'];
 
@@ -235,7 +268,17 @@ class _MyHomePageState extends State<MyHomePage>
                               color: Colors.grey[300],
                             )),
                       ))
-                ]))
+                ])),
+            const Padding(padding: EdgeInsets.all(5)),
+            (_banner == null)
+                ? Container(
+                    height: 0,
+                  )
+                : SizedBox(
+                    height: 50,
+                    width: 320,
+                    child: AdWidget(ad: _banner!),
+                  ),
           ])),
     );
   }
