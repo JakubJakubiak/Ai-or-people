@@ -17,6 +17,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import './modules/ad_bob_service.dart';
 
 import 'package:games_services/games_services.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'package:flutter/services.dart';
 import 'dart:collection';
@@ -24,6 +26,7 @@ import 'dart:collection';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
+  Firebase.initializeApp();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -234,6 +237,17 @@ class _MyHomePageState extends State<MyHomePage>
               color: Colors.pink,
               size: 36.0,
             ),
+            FloatingActionButton.extended(
+                onPressed: () async => {
+                      HapticFeedback.mediumImpact(),
+                      _showLeaderboards(),
+                    },
+                backgroundColor: ui.Color(0xFF5B4792),
+                label: const Icon(
+                  Icons.home,
+                  color: ui.Color.fromRGBO(255, 255, 255, 1),
+                  size: 30.0,
+                )),
           ],
         ),
       ),
