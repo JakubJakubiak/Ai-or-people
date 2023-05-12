@@ -266,7 +266,6 @@ class _MyHomePageState extends State<MyHomePage>
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
-            const Padding(padding: EdgeInsets.all(10)),
             SizedBox(
               height: MediaQuery.of(context).size.width,
               child: Stack(
@@ -280,12 +279,15 @@ class _MyHomePageState extends State<MyHomePage>
                         currentIndex = index;
                         images = categoryDraw[index]['link'];
 
-                        return ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: CachedNetworkImage(
-                              imageUrl: images,
-                              errorWidget: (context, url, error) =>
-                                  const Icon(Icons.error),
+                        return Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: CachedNetworkImage(
+                                imageUrl: images,
+                                errorWidget: (context, url, error) =>
+                                    const Icon(Icons.error),
+                              ),
                             ));
                       },
                     ),
