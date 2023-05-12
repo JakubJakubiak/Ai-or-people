@@ -11,9 +11,12 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import './ai_Image/linkImage.dart';
 import './ai_Image/humanimahge.dart';
+import 'package:facebook_app_events/facebook_app_events.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import './modules/ad_bob_service.dart';
+
+import 'package:games_services/games_services.dart';
 
 import 'package:flutter/services.dart';
 import 'dart:collection';
@@ -61,6 +64,7 @@ class _MyHomePageState extends State<MyHomePage>
   int _counter = 0;
   int currentIndex = 0;
   BannerAd? _banner;
+  int life = 3;
 
   List<Map<String, dynamic>> categoryDraw = [];
   Animation<double>? animation;
@@ -82,6 +86,7 @@ class _MyHomePageState extends State<MyHomePage>
   @override
   void initState() {
     super.initState();
+    GamesServices.signIn();
     // stateManager.makeGetRequest();
     _createBanerAd();
   }
@@ -104,22 +109,14 @@ class _MyHomePageState extends State<MyHomePage>
 
   trueOdFalse(context, {required String categoryWin}) async {
     if (categoryWin == categoryDraw[currentIndex]['category'] &&
-        answer == false) _incrementCounter();
+        answer == false) {
+      _incrementCounter();
+    } else {
+      _dekrementation();
+    }
 
     posValue = posValue == 0.0 ? sizeW : sizeW;
     posValueHeight = posValueHeight == 0.0 ? sizeH : sizeH;
-
-    // if (posValue == 0.0) {
-    //   posValue = sizeW;
-    // } else {
-    //   posValue = sizeW;
-    // }
-
-    // if (posValueHeight == 0.0) {
-    //   posValueHeight = sizeH;
-    // } else {
-    //   posValueHeight = sizeH;
-    // }
 
     timesAnimationAwait() async {
       await _pageController.animateToPage(_pageController.page!.toInt() + 1,
@@ -174,6 +171,41 @@ class _MyHomePageState extends State<MyHomePage>
     )..load();
   }
 
+  void _dekrementation() {
+    setState(() {
+      life--;
+      if (life <= -1) EndeScrine();
+    });
+  }
+
+  void EndeScrine() async {
+    setState(() {
+      life = 3;
+    });
+    await _submitScore();
+    _showLeaderboards();
+  }
+
+  Future<void> _submitScore() async {
+    final result = await Leaderboards.submitScore(
+        score: Score(
+            androidLeaderboardID: 'CgkIsM2JmbsEEAIQAA',
+            iOSLeaderboardID: 'ios_leaderboard_id',
+            value: _counter));
+    print(result);
+  }
+
+  void _signIn() async {
+    final result = await GameAuth.signIn(shouldEnableSavedGame: true);
+    print(result);
+  }
+
+  void _showLeaderboards() async {
+    final result = await Leaderboards.showLeaderboards(
+        androidLeaderboardID: 'CgkIsM2JmbsEEAIQAA');
+    print(result);
+  }
+
   @override
   Widget build(BuildContext context) {
     loadImages();
@@ -183,15 +215,38 @@ class _MyHomePageState extends State<MyHomePage>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: <Widget>[
+            Text(widget.title),
+            Icon(
+              life >= 1 ? Icons.favorite : Icons.favorite_border,
+              color: Colors.pink,
+              size: 36.0,
+            ),
+            Icon(
+              life >= 2 ? Icons.favorite : Icons.favorite_border,
+              color: Colors.pink,
+              size: 36.0,
+            ),
+            Icon(
+              life >= 3 ? Icons.favorite : Icons.favorite_border,
+              color: Colors.pink,
+              size: 36.0,
+            ),
+          ],
+        ),
       ),
       body: Center(
           child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-            const Text(
-              'Guess which image was made by human and which by ai?',
-              maxLines: 5,
+            const Padding(
+              padding: EdgeInsets.only(left: 30, right: 30),
+              child: Text(
+                'Guess which image was made by human and which by ai?',
+                maxLines: 5,
+              ),
             ),
             Text(
               '$_counter',
@@ -267,7 +322,7 @@ class _MyHomePageState extends State<MyHomePage>
                               fontSize: 30,
                               color: Colors.grey[300],
                             )),
-                      ))
+                      )),
                 ])),
             const Padding(padding: EdgeInsets.all(5)),
             (_banner == null)

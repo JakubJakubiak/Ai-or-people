@@ -40,6 +40,9 @@ dependencies:
   flutter_launcher_icons: ^0.11.0
   cached_network_image: ^3.2.3
   google_mobile_ads: ^2.4.0
+  facebook_app_events: ^0.18.3
+  games_services: ^3.0.1
+  
 
 dev_dependencies:
   flutter_test:
