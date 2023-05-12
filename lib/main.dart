@@ -182,12 +182,12 @@ class _MyHomePageState extends State<MyHomePage>
   }
 
   void EndeScrine() async {
-    await _submitScore();
-    _showLeaderboards();
     setState(() {
       life = 3;
       _counter = 0;
     });
+    _showLeaderboards();
+    await _submitScore();
   }
 
   Future<void> _submitScore() async {
@@ -205,9 +205,9 @@ class _MyHomePageState extends State<MyHomePage>
   }
 
   void _showLeaderboards() async {
+    GamesServices.signIn();
     final result = await Leaderboards.showLeaderboards(
         androidLeaderboardID: 'CgkIsM2JmbsEEAIQAA');
-    GamesServices.signIn();
     print(result);
   }
 
