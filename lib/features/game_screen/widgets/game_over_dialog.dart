@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:games_services/games_services.dart';
 import 'package:humanai/utils/shared_preferences_helper.dart';
 
 class GameOverDialog extends StatelessWidget {
@@ -62,35 +63,77 @@ class GameOverDialog extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.of(context).pop();
-                onContinuePlaying();
-              },
-              icon: const Icon(
-                Icons.play_arrow,
-                size: 48,
-              ),
-              label: const Text(
-                'Continue',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: FilledButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        onContinuePlaying();
+                      },
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Icon(
+                            Icons.play_arrow,
+                            size: 48,
+                          ),
+                          Text(
+                            'Continue',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                SizedBox(
+                  height: 48,
+                  child: FilledButton(
+                    child: const Icon(Icons.leaderboard, size: 42),
+                    onPressed: () => Leaderboards.showLeaderboards(
+                      androidLeaderboardID: 'CgkI9JqZ6Z8VEAIQAA',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 48,
+              child: FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  onPlayAgain();
+                },
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.replay,
+                      size: 42,
+                    ),
+                    SizedBox(width: 16),
+                    Text(
+                      'Play Again',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            onPlayAgain();
-          },
-          child: const Text('Start Again'),
-        ),
-      ],
     );
   }
 }

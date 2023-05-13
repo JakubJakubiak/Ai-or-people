@@ -9,10 +9,16 @@ import 'package:humanai/ai_Image/humanimahge.dart';
 import 'package:humanai/ai_Image/linkImage.dart';
 import 'package:humanai/features/game_screen/widgets/game_over_dialog.dart';
 import 'package:humanai/modules/admob_service.dart';
+import 'package:humanai/utils/constants.dart';
 import 'package:humanai/utils/shared_preferences_helper.dart';
 
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key});
+  const GameScreen({
+    super.key,
+    this.initialHealth = 3,
+  });
+
+  final int initialHealth;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -20,14 +26,12 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController controller;
+  int currentHealth = 0;
 
   bool answer = false;
-
   int score = 0;
   int currentIndex = 0;
   BannerAd? _banner;
-  int life = 1;
 
   List<Map<String, dynamic>> gameImages = [];
   Animation<double>? animation;
@@ -47,12 +51,13 @@ class _GameScreenState extends State<GameScreen>
   @override
   void initState() {
     super.initState();
-    loadImages();
+    currentHealth = widget.initialHealth;
+    _loadImages();
     GamesServices.signIn();
     _createBanerAd();
   }
 
-  Future<void> loadImages() async {
+  Future<void> _loadImages() async {
     if (gameImages.isEmpty) {
       await Future.forEach(imageListLink, (link) async {
         gameImages.add({'link': link, 'category': 'ai'});
@@ -98,7 +103,6 @@ class _GameScreenState extends State<GameScreen>
 
   @override
   void dispose() {
-    controller.dispose();
     super.dispose();
   }
 
@@ -113,18 +117,22 @@ class _GameScreenState extends State<GameScreen>
 
   void _loseHealth() {
     setState(() {
-      life--;
+      currentHealth--;
     });
-    if (life <= 0) {
+    if (currentHealth <= 0) {
       endGame();
     }
   }
 
   void endGame() {
     _submitScore(score);
+    saveBestScore(score);
+    showGameOverDialog();
+  }
+
+  void saveBestScore(int score) {
     final bestScore = SharedPreferencesHelper.getBestScore();
     if (score > bestScore) SharedPreferencesHelper.setBestScore(score);
-    showGameOverDialog();
   }
 
   Future<Widget?> showGameOverDialog() {
@@ -148,12 +156,11 @@ class _GameScreenState extends State<GameScreen>
       if (!await isSignedIn()) return;
       await Leaderboards.submitScore(
         score: Score(
-          androidLeaderboardID: 'CgkIsM2JmbsEEAIQAA',
-          iOSLeaderboardID: 'ios_leaderboard_id',
+          androidLeaderboardID: Constants.androidLeaderboardId,
+          iOSLeaderboardID: Constants.iosLeaderboardId,
           value: counter,
         ),
       );
-      print("login _submitScore ");
     } catch (e) {
       print(e);
     }
@@ -161,23 +168,23 @@ class _GameScreenState extends State<GameScreen>
 
   void addFullHealth() {
     setState(() {
-      life = 3;
+      currentHealth = 3;
     });
   }
 
   void reset() {
     setState(() {
-      life = 3;
+      currentHealth = 3;
       score = 0;
     });
   }
 
   Future<void> _showLeaderboards() async {
     if (!await isSignedIn()) return;
-    final result = await Leaderboards.showLeaderboards(
-      androidLeaderboardID: 'CgkIsM2JmbsEEAIQAA',
+    await Leaderboards.showLeaderboards(
+      androidLeaderboardID: Constants.androidLeaderboardId,
+      iOSLeaderboardID: Constants.iosLeaderboardId,
     );
-    print(result);
   }
 
   Future<void> advertisement() async {
@@ -231,19 +238,19 @@ class _GameScreenState extends State<GameScreen>
           children: <Widget>[
             const Spacer(),
             Icon(
-              life >= 1 ? Icons.favorite : Icons.favorite_border,
+              currentHealth >= 1 ? Icons.favorite : Icons.favorite_border,
               color: Colors.pink,
               size: 36.0,
             ),
             const SizedBox(width: 4),
             Icon(
-              life >= 2 ? Icons.favorite : Icons.favorite_border,
+              currentHealth >= 2 ? Icons.favorite : Icons.favorite_border,
               color: Colors.pink,
               size: 36.0,
             ),
             const SizedBox(width: 4),
             Icon(
-              life >= 3 ? Icons.favorite : Icons.favorite_border,
+              currentHealth >= 3 ? Icons.favorite : Icons.favorite_border,
               color: Colors.pink,
               size: 36.0,
             ),
@@ -281,7 +288,10 @@ class _GameScreenState extends State<GameScreen>
               const SizedBox(height: 20),
               Text(
                 '$score',
-                style: Theme.of(context).textTheme.headlineMedium,
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -326,7 +336,8 @@ class _GameScreenState extends State<GameScreen>
                         child: FilledButton(
                           onPressed: () async {
                             HapticFeedback.mediumImpact();
-                            if (life > 0) processResponse(categoryWin: 'ai');
+                            if (currentHealth > 0)
+                              processResponse(categoryWin: 'ai');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: answer == true
@@ -355,7 +366,7 @@ class _GameScreenState extends State<GameScreen>
                         child: FilledButton(
                           onPressed: () async {
                             HapticFeedback.mediumImpact();
-                            if (life > 0) {
+                            if (currentHealth > 0) {
                               processResponse(categoryWin: 'human');
                             }
                           },
