@@ -26,11 +26,11 @@ import 'dart:collection';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
+  await Firebase.initializeApp();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]).then((value) => runApp(const MyApp()));
-  await Firebase.initializeApp();
 }
 
 class MyApp extends StatelessWidget {
