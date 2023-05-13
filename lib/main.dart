@@ -1,33 +1,22 @@
-import 'dart:convert';
-import 'dart:io';
-import 'dart:ui' as ui;
-import 'dart:math';
 import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:http/http.dart' as http;
-
-import 'package:flutter/material.dart';
-import './ai_Image/linkImage.dart';
-import './ai_Image/humanimahge.dart';
-import 'package:facebook_app_events/facebook_app_events.dart';
+import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
-import './modules/ad_bob_service.dart';
-
-import 'package:games_services/games_services.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:collection';
+import 'package:games_services/games_services.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+
+import 'package:humanai/ai_Image/humanimahge.dart';
+import 'package:humanai/ai_Image/linkImage.dart';
+import 'package:humanai/modules/ad_bob_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  MobileAds.instance.initialize();
+  await MobileAds.instance.initialize();
   await Firebase.initializeApp();
-  SystemChrome.setPreferredOrientations([
+  await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]).then((value) => runApp(const MyApp()));
@@ -103,7 +92,7 @@ class _MyHomePageState extends State<MyHomePage>
   }
 //  final stateManager = HomePageManager();
 
-  loadImages() async {
+  void loadImages() async {
     if (categoryDraw.isEmpty) {
       await Future.forEach(imageListLink, (link) async {
         categoryDraw.add({'link': link, 'category': 'ai'});
@@ -118,16 +107,13 @@ class _MyHomePageState extends State<MyHomePage>
     }
   }
 
-  trueOdFalse(context, {required String categoryWin}) async {
+  void trueOdFalse(context, {required String categoryWin}) async {
     if (categoryWin == categoryDraw[currentIndex]['category'] &&
         answer == false) {
       _incrementCounter();
     } else {
       _dekrementation();
     }
-
-    posValue = posValue == 0.0 ? sizeW : sizeW;
-    posValueHeight = posValueHeight == 0.0 ? sizeH : sizeH;
 
     timesAnimationAwait() async {
       await _pageController.animateToPage(_pageController.page!.toInt() + 1,
@@ -139,8 +125,6 @@ class _MyHomePageState extends State<MyHomePage>
             timesAnimationAwait();
             setState(() {
               answer = false;
-              posValue = sizeW;
-              posValueHeight = sizeH;
             });
           })
         : null;
@@ -148,23 +132,6 @@ class _MyHomePageState extends State<MyHomePage>
     setState(() {
       answer = !answer;
     });
-  }
-
-  Future<Size> _calculateImageDimension(images) async {
-    Completer<Size> completer = Completer();
-    Image image = Image.network(images);
-    image.image.resolve(const ImageConfiguration()).addListener(
-      ImageStreamListener(
-        (ImageInfo image, bool synchronousCall) {
-          var myImage = image.image;
-          Size size = Size(myImage.width.toDouble(), myImage.height.toDouble());
-          completer.complete(size);
-          sizeW = size.width;
-          sizeH = size.height;
-        },
-      ),
-    );
-    return completer.future;
   }
 
   @override
@@ -176,7 +143,7 @@ class _MyHomePageState extends State<MyHomePage>
   void _createBanerAd() async {
     _banner = BannerAd(
       size: AdSize.fullBanner,
-      adUnitId: AdMobService.bannerAdUnitId!,
+      adUnitId: AdMobService.bannerAdUnitId,
       listener: AdMobService.bannerAdListener,
       request: const AdRequest(),
     )..load();
@@ -250,7 +217,7 @@ class _MyHomePageState extends State<MyHomePage>
 
   Future<void> _loadIntersitialAd() async {
     await InterstitialAd.load(
-      adUnitId: 'ca-app-pub-5915784054696948/7684396126',
+      adUnitId: AdMobService.interstitialAdUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
@@ -267,8 +234,7 @@ class _MyHomePageState extends State<MyHomePage>
   Widget build(BuildContext context) {
     loadImages();
 
-    String images = categoryDraw[currentIndex]['link'];
-    _calculateImageDimension(images).then((size) => {print(size)});
+    var images = categoryDraw[currentIndex]['link'] as String;
 
     return Scaffold(
       appBar: AppBar(
@@ -309,31 +275,28 @@ class _MyHomePageState extends State<MyHomePage>
           child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-            (life <= 0)
-                ? Column(children: [
-                    const Text(
-                      'chesz otrymac 3 serducha',
-                      maxLines: 2,
+            if (life <= 0)
+              Column(children: [
+                const Text(
+                  'chesz otrymac 3 serducha',
+                  maxLines: 2,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: advertisement,
+                      child: const Text('Yes'),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () {
-                            advertisement();
-                          },
-                          child: const Text('Yes'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            EndeScrine();
-                          },
-                          child: const Text('No'),
-                        ),
-                      ],
+                    ElevatedButton(
+                      onPressed: EndeScrine,
+                      child: const Text('No'),
                     ),
-                  ])
-                : const SizedBox.shrink(),
+                  ],
+                ),
+              ])
+            else
+              const SizedBox.shrink(),
             const Padding(
               padding: EdgeInsets.only(left: 30, right: 30),
               child: Text(
@@ -356,7 +319,7 @@ class _MyHomePageState extends State<MyHomePage>
                       controller: _pageController,
                       itemBuilder: (context, index) {
                         currentIndex = index;
-                        images = categoryDraw[index]['link'];
+                        images = categoryDraw[index]['link'] as String;
 
                         return Padding(
                             padding: const EdgeInsets.all(10),

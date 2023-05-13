@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Aiimageorpeople</string>
+	<string>Ai Or People</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>aiimageorpeople</string>
+	<string>ai_or_people</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -47,5 +47,22 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+	<dict>
+	<key>CFBundleURLSchemes</key>
+	<array>
+		<string>fb1175449706463290</string>
+	</array>
+	</dict>
+	</array>
+	<key>FacebookAppID</key>
+	<string>1175449706463290</string>
+	<key>FacebookClientToken</key>
+	<string>c5fffd680c490b9b6b88f748750d0834</string>
+	<key>FacebookDisplayName</key>
+	<string>Ai or People</string>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-5915784054696948~4365804508</string>
 </dict>
 </plist>

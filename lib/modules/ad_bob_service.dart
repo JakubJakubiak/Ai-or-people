@@ -3,11 +3,11 @@ import 'package:flutter/widgets.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class AdMobService {
-  static String? get bannerAdUnitId {
+  static String get bannerAdUnitId {
     if (Platform.isAndroid) {
       return 'ca-app-pub-5915784054696948/6625475644';
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/2934735716';
+      return 'ca-app-pub-5915784054696948/9426559499';
     } else {
       throw UnsupportedError('Unsupported platform');
     }
@@ -37,21 +37,21 @@ class AdMobService {
 //full video scrien
 // 'ca-app-pub-5915784054696948/7783395671';
 
-  static String? get interstitialAdUnitId {
+  static String get interstitialAdUnitId {
     if (Platform.isAndroid) {
       return 'ca-app-pub-5915784054696948/7684396126';
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/2934735716';
+      return '';
     } else {
       throw UnsupportedError('Unsupported platform');
     }
   }
 
-  static String? get rewardedAdUnitID {
+  static String get rewardedAdUnitID {
     if (Platform.isAndroid) {
       return 'ca-app-pub-5915784054696948/7684396126';
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/2934735716';
+      return 'ca-app-pub-5915784054696948/6894892781';
     } else {
       throw UnsupportedError('Unsupported platform');
     }
