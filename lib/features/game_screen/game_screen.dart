@@ -8,9 +8,12 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:humanai/ai_Image/humanimahge.dart';
 import 'package:humanai/ai_Image/linkImage.dart';
 import 'package:humanai/features/game_screen/widgets/game_over_dialog.dart';
+import 'package:humanai/features/game_screen/widgets/healh_display.dart';
 import 'package:humanai/modules/admob_service.dart';
 import 'package:humanai/utils/constants.dart';
 import 'package:humanai/utils/shared_preferences_helper.dart';
+
+enum CurrentAnswer { none, ai, human }
 
 class GameScreen extends StatefulWidget {
   const GameScreen({
@@ -28,7 +31,7 @@ class _GameScreenState extends State<GameScreen>
     with SingleTickerProviderStateMixin {
   int currentHealth = 0;
 
-  bool answer = false;
+  CurrentAnswer answer = CurrentAnswer.none;
   int score = 0;
   int currentIndex = 0;
   BannerAd? _banner;
@@ -71,9 +74,12 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
-  Future<void> processResponse({required String categoryWin}) async {
-    if (categoryWin == gameImages[currentIndex]['category'] &&
-        answer == false) {
+  Future<void> processResponse({
+    required String categoryWin,
+    required CurrentAnswer answer,
+  }) async {
+    this.answer = answer;
+    if (categoryWin == gameImages[currentIndex]['category']) {
       _incrementScore();
     } else {
       _loseHealth();
@@ -87,17 +93,11 @@ class _GameScreenState extends State<GameScreen>
       );
     }
 
-    if (!answer) {
-      timer = Timer(const Duration(milliseconds: 600), () {
-        showNextImage();
-        setState(() {
-          answer = false;
-        });
+    timer = Timer(const Duration(milliseconds: 600), () {
+      showNextImage();
+      setState(() {
+        this.answer = CurrentAnswer.none;
       });
-    }
-
-    setState(() {
-      answer = !answer;
     });
   }
 
@@ -233,28 +233,9 @@ class _GameScreenState extends State<GameScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: <Widget>[
-            const Spacer(),
-            Icon(
-              currentHealth >= 1 ? Icons.favorite : Icons.favorite_border,
-              color: Colors.pink,
-              size: 36.0,
-            ),
-            const SizedBox(width: 4),
-            Icon(
-              currentHealth >= 2 ? Icons.favorite : Icons.favorite_border,
-              color: Colors.pink,
-              size: 36.0,
-            ),
-            const SizedBox(width: 4),
-            Icon(
-              currentHealth >= 3 ? Icons.favorite : Icons.favorite_border,
-              color: Colors.pink,
-              size: 36.0,
-            ),
-          ],
+        title: HealthDisplay(
+          currentHealth: currentHealth,
+          maxHealth: widget.initialHealth,
         ),
         actions: [
           IconButton(
@@ -336,11 +317,15 @@ class _GameScreenState extends State<GameScreen>
                         child: FilledButton(
                           onPressed: () async {
                             HapticFeedback.mediumImpact();
-                            if (currentHealth > 0)
-                              processResponse(categoryWin: 'ai');
+                            if (currentHealth > 0) {
+                              await processResponse(
+                                categoryWin: 'ai',
+                                answer: CurrentAnswer.ai,
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: answer == true
+                            backgroundColor: answer == CurrentAnswer.ai
                                 ? gameImages[currentIndex]['category'] == 'ai'
                                     ? const Color.fromARGB(255, 41, 95, 43)
                                     : const Color.fromARGB(255, 129, 42, 42)
@@ -367,11 +352,14 @@ class _GameScreenState extends State<GameScreen>
                           onPressed: () async {
                             HapticFeedback.mediumImpact();
                             if (currentHealth > 0) {
-                              processResponse(categoryWin: 'human');
+                              await processResponse(
+                                categoryWin: 'human',
+                                answer: CurrentAnswer.human,
+                              );
                             }
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: answer == true
+                            backgroundColor: answer == CurrentAnswer.human
                                 ? gameImages[currentIndex]['category'] ==
                                         'human'
                                     ? const Color.fromARGB(255, 41, 95, 43)

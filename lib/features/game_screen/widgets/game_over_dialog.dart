@@ -3,11 +3,12 @@ import 'package:games_services/games_services.dart';
 import 'package:humanai/utils/shared_preferences_helper.dart';
 
 class GameOverDialog extends StatelessWidget {
-  const GameOverDialog(
-      {super.key,
-      required this.score,
-      required this.onPlayAgain,
-      required this.onContinuePlaying});
+  const GameOverDialog({
+    super.key,
+    required this.score,
+    required this.onPlayAgain,
+    required this.onContinuePlaying,
+  });
 
   final int score;
   final VoidCallback onPlayAgain;
