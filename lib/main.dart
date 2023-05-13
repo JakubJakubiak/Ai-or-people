@@ -198,10 +198,10 @@ class _MyHomePageState extends State<MyHomePage>
     } catch (e) {
       print(e);
     }
-    EndeScrineZero();
+    reset();
   }
 
-  void EndeScrineZero() {
+  void reset() {
     setState(() {
       life = 3;
       _counter = 0;
