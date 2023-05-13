@@ -64,6 +64,9 @@ class _MyHomePageState extends State<MyHomePage>
 
   bool answer = false;
 
+  // InterstitialAd? _interstitialAd;
+  RewardedAd? _rewardedAd;
+
   int _counter = 0;
   int currentIndex = 0;
   BannerAd? _banner;
@@ -92,6 +95,11 @@ class _MyHomePageState extends State<MyHomePage>
     GamesServices.signIn();
     // stateManager.makeGetRequest();
     _createBanerAd();
+
+    //google ads
+    // _createBanerAd();
+    // _createInterstitialAd();
+    // _createRewardedAd();
   }
 //  final stateManager = HomePageManager();
 
@@ -174,10 +182,21 @@ class _MyHomePageState extends State<MyHomePage>
     )..load();
   }
 
+  //   void _createInterstitialAd() {
+  //   InterstitialAd.load(
+  //     adUnitId: AdMobService.interstitialAdUnitId!,
+  //     request: const AdRequest(),
+  //     adLoadCallback: InterstitialAdLoadCallback(
+  //       onAdLoaded: (ad) => _interstitialAd = ad,
+  //       onAdFailedToLoad: (LoadAdError error) => _interstitialAd = null,
+  //     ),
+  //   );
+  // }
+
   void _dekrementation() {
     setState(() {
       life--;
-      if (life <= -1) EndeScrine();
+      // if (life <= -1) EndeScrine();
     });
   }
 
@@ -187,12 +206,13 @@ class _MyHomePageState extends State<MyHomePage>
     reset();
   }
 
+  Future<bool> isSignedIn() async {
+    return await GameAuth.isSignedIn;
+  }
+
   Future<void> _submitScore(int counter) async {
     try {
-      final isSignedIn = await GameAuth.isSignedIn;
-      print('logged in $isSignedIn');
-      if (!isSignedIn) return;
-
+      if (!await isSignedIn()) return;
       await Leaderboards.submitScore(
           score: Score(
               androidLeaderboardID: 'CgkIsM2JmbsEEAIQAA',
@@ -217,10 +237,30 @@ class _MyHomePageState extends State<MyHomePage>
   }
 
   void _showLeaderboards() async {
-    GamesServices.signIn();
+    if (!await isSignedIn()) return;
     final result = await Leaderboards.showLeaderboards(
         androidLeaderboardID: 'CgkIsM2JmbsEEAIQAA');
     print(result);
+  }
+
+  void advertisement() async {
+    await _loadIntersitialAd();
+    EndeScrine();
+  }
+
+  Future<void> _loadIntersitialAd() async {
+    await InterstitialAd.load(
+      adUnitId: 'ca-app-pub-5915784054696948/7684396126',
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          ad.show();
+        },
+        onAdFailedToLoad: (error) {
+          // log('InterstitialAd failed to load: $error');
+        },
+      ),
+    );
   }
 
   @override
@@ -258,7 +298,7 @@ class _MyHomePageState extends State<MyHomePage>
                     },
                 backgroundColor: ui.Color(0xFF5B4792),
                 label: const Icon(
-                  Icons.home,
+                  Icons.table_rows,
                   color: ui.Color.fromRGBO(255, 255, 255, 1),
                   size: 30.0,
                 )),
@@ -269,6 +309,31 @@ class _MyHomePageState extends State<MyHomePage>
           child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
+            (life <= 0)
+                ? Column(children: [
+                    const Text(
+                      'chesz otrymac 3 serducha',
+                      maxLines: 2,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            advertisement();
+                          },
+                          child: const Text('Yes'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            EndeScrine();
+                          },
+                          child: const Text('No'),
+                        ),
+                      ],
+                    ),
+                  ])
+                : const SizedBox.shrink(),
             const Padding(
               padding: EdgeInsets.only(left: 30, right: 30),
               child: Text(
@@ -317,7 +382,9 @@ class _MyHomePageState extends State<MyHomePage>
                       child: FloatingActionButton.extended(
                         onPressed: () async => {
                           HapticFeedback.mediumImpact(),
-                          trueOdFalse(context, categoryWin: 'ai'),
+                          (life <= 0)
+                              ? null
+                              : trueOdFalse(context, categoryWin: 'ai'),
                         },
                         backgroundColor: answer == true
                             ? categoryDraw[currentIndex]['category'] == 'ai'
@@ -338,7 +405,9 @@ class _MyHomePageState extends State<MyHomePage>
                       child: FloatingActionButton.extended(
                         onPressed: () async => {
                           HapticFeedback.mediumImpact(),
-                          trueOdFalse(context, categoryWin: 'human'),
+                          (life <= 0)
+                              ? null
+                              : trueOdFalse(context, categoryWin: 'human'),
                         },
                         backgroundColor: answer == true
                             ? categoryDraw[currentIndex]['category'] == 'human'

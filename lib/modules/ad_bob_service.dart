@@ -39,7 +39,7 @@ class AdMobService {
 
   static String? get interstitialAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-5915784054696948/6625475644';
+      return 'ca-app-pub-5915784054696948/7684396126';
     } else if (Platform.isIOS) {
       return 'ca-app-pub-3940256099942544/2934735716';
     } else {
@@ -49,7 +49,7 @@ class AdMobService {
 
   static String? get rewardedAdUnitID {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-5915784054696948/6625475644';
+      return 'ca-app-pub-5915784054696948/7684396126';
     } else if (Platform.isIOS) {
       return 'ca-app-pub-3940256099942544/2934735716';
     } else {
