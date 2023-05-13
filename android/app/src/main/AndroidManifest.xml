@@ -2,6 +2,7 @@
     package="com.example.aiimageorpeople">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="com.google.android.gms.permission.AD_ID"/>
+     <uses-permission android:name="android.permission.VIBRATE"/>
    <application
         android:label="humanAI"
         android:name="${applicationName}"

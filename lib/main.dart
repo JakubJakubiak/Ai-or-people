@@ -26,11 +26,12 @@ import 'dart:collection';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
-  Firebase.initializeApp();
+
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]).then((value) => runApp(const MyApp()));
+  await Firebase.initializeApp();
 }
 
 class MyApp extends StatelessWidget {
@@ -182,21 +183,29 @@ class _MyHomePageState extends State<MyHomePage>
   }
 
   void EndeScrine() async {
+    await _submitScore();
+    _showLeaderboards();
+  }
+
+  Future<void> _submitScore() async {
+    try {
+      final result = await Leaderboards.submitScore(
+          score: Score(
+              androidLeaderboardID: 'CgkIsM2JmbsEEAIQAA',
+              iOSLeaderboardID: 'ios_leaderboard_id',
+              value: _counter));
+      print(result);
+    } catch (e) {
+      print(e);
+    }
+    EndeScrineZero();
+  }
+
+  void EndeScrineZero() {
     setState(() {
       life = 3;
       _counter = 0;
     });
-    _showLeaderboards();
-    await _submitScore();
-  }
-
-  Future<void> _submitScore() async {
-    final result = await Leaderboards.submitScore(
-        score: Score(
-            androidLeaderboardID: 'CgkIsM2JmbsEEAIQAA',
-            iOSLeaderboardID: 'ios_leaderboard_id',
-            value: _counter));
-    print(result);
   }
 
   void _signIn() async {
@@ -206,6 +215,8 @@ class _MyHomePageState extends State<MyHomePage>
 
   void _showLeaderboards() async {
     GamesServices.signIn();
+    /////////////usnunac
+    _submitScore();
     final result = await Leaderboards.showLeaderboards(
         androidLeaderboardID: 'CgkIsM2JmbsEEAIQAA');
     print(result);
