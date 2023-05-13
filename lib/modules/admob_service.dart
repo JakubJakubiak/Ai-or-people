@@ -1,9 +1,11 @@
 import 'dart:io';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class AdMobService {
   static String get bannerAdUnitId {
+    if (kDebugMode)
+      return 'ca-app-pub-3940256099942544/2934735716'; // test ad ID
     if (Platform.isAndroid) {
       return 'ca-app-pub-5915784054696948/6625475644';
     } else if (Platform.isIOS) {
@@ -48,6 +50,7 @@ class AdMobService {
   }
 
   static String get rewardedAdUnitID {
+    if (kDebugMode) return 'ca-app-pub-3940256099942544/1712485313';
     if (Platform.isAndroid) {
       return 'ca-app-pub-5915784054696948/7684396126';
     } else if (Platform.isIOS) {
