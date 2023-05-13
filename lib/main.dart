@@ -26,7 +26,6 @@ import 'dart:collection';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
-
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -183,22 +182,26 @@ class _MyHomePageState extends State<MyHomePage>
   }
 
   void EndeScrine() async {
-    await _submitScore();
+    await _submitScore(_counter);
     _showLeaderboards();
+    reset();
   }
 
-  Future<void> _submitScore() async {
+  Future<void> _submitScore(int counter) async {
     try {
-      final result = await Leaderboards.submitScore(
+      final isSignedIn = await GameAuth.isSignedIn;
+      print('logged in $isSignedIn');
+      if (!isSignedIn) return;
+
+      await Leaderboards.submitScore(
           score: Score(
               androidLeaderboardID: 'CgkIsM2JmbsEEAIQAA',
               iOSLeaderboardID: 'ios_leaderboard_id',
-              value: _counter));
-      print(result);
+              value: counter));
+      print("login _submitScore ");
     } catch (e) {
       print(e);
     }
-    reset();
   }
 
   void reset() {
@@ -215,8 +218,6 @@ class _MyHomePageState extends State<MyHomePage>
 
   void _showLeaderboards() async {
     GamesServices.signIn();
-    /////////////usnunac
-    _submitScore();
     final result = await Leaderboards.showLeaderboards(
         androidLeaderboardID: 'CgkIsM2JmbsEEAIQAA');
     print(result);
