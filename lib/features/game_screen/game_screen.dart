@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -42,8 +43,9 @@ class _GameScreenState extends State<GameScreen>
   dynamic sizeH;
 
   late Timer timer;
-
   final _pageController = PageController();
+
+  RewardedAd? _rewardedAd;
 
   void _incrementScore() {
     setState(() {
@@ -78,7 +80,9 @@ class _GameScreenState extends State<GameScreen>
     required String categoryWin,
     required CurrentAnswer answer,
   }) async {
+    if (this.answer != CurrentAnswer.none) return;
     this.answer = answer;
+
     if (categoryWin == gameImages[currentIndex]['category']) {
       _incrementScore();
     } else {
@@ -125,6 +129,7 @@ class _GameScreenState extends State<GameScreen>
   }
 
   void endGame() {
+    _loadRewardedAd();
     _submitScore(score);
     saveBestScore(score);
     showGameOverDialog();
@@ -142,7 +147,15 @@ class _GameScreenState extends State<GameScreen>
       builder: (context) => GameOverDialog(
         score: score,
         onPlayAgain: reset,
-        onContinuePlaying: _loadRewardedAd,
+        onContinuePlaying: () {
+          if (_rewardedAd != null) {
+            _rewardedAd?.show(
+              onUserEarnedReward: (ad, reward) {
+                addFullHealth();
+              },
+            );
+          }
+        },
       ),
     );
   }
@@ -214,13 +227,11 @@ class _GameScreenState extends State<GameScreen>
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
-          ad.show(
-            onUserEarnedReward: (ad, reward) {
-              addFullHealth();
-            },
-          );
+          _rewardedAd = ad;
         },
         onAdFailedToLoad: (error) {
+          log(error.message);
+          log('RewardedAd failed to load: $error');
           addFullHealth();
         },
       ),

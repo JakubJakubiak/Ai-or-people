@@ -70,9 +70,36 @@ class GameOverDialog extends StatelessWidget {
                   child: SizedBox(
                     height: 48,
                     child: FilledButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        onContinuePlaying();
+                      onPressed: () async {
+                        // show confirmation dialog
+                        final outerContext = context;
+                        await showDialog<AlertDialog>(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text('Continue Playing?'),
+                              content: const Text(
+                                'Watch an ad to continue playing?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: const Text('No'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    Navigator.of(outerContext).pop();
+                                    onContinuePlaying();
+                                  },
+                                  child: const Text('Yes'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
                       },
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
