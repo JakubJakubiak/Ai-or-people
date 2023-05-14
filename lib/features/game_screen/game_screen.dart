@@ -35,9 +35,6 @@ class _GameScreenState extends State<GameScreen>
     with SingleTickerProviderStateMixin {
   int currentHealth = 0;
 
-  List<Map<String, dynamic>> _items = [];
-  List<Map<String, dynamic>> _filteredItems = [];
-  TextEditingController searchController = TextEditingController();
   final stateManager = HomePageManager();
 
   CurrentAnswer answer = CurrentAnswer.none;
@@ -65,23 +62,9 @@ class _GameScreenState extends State<GameScreen>
   void initState() {
     super.initState();
     currentHealth = widget.initialHealth;
-    _loadImages();
     GamesServices.signIn();
     _createBanerAd();
-  }
-
-  Future<void> _loadImages() async {
-    if (gameImages.isEmpty) {
-      await Future.forEach(imageListLink, (link) async {
-        gameImages.add({'link': link, 'category': 'ai'});
-      });
-      await Future.forEach(humanImage, (link) async {
-        gameImages.add({'link': link, 'category': 'human'});
-      });
-
-      gameImages.shuffle();
-      setState(() {});
-    }
+    stateManager.makeGetRequest();
   }
 
   Future<void> processResponse({
@@ -266,10 +249,17 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
+  void setupImages(Map<String, dynamic> jsonData) {
+    final imagesList = jsonData['humanOrAi'] as List<dynamic>;
+    final mapped = imagesList.cast<Map<String, dynamic>>().map((e) {
+      return {'link': e['link'], 'category': e['op']};
+    }).toList()
+      ..shuffle();
+    gameImages = mapped;
+  }
+
   @override
   Widget build(BuildContext context) {
-    var images = gameImages[currentIndex]['link'] as String;
-
     return ValueListenableBuilder<RequestState>(
       valueListenable: stateManager.resultNotifier,
       builder: (context, requestState, child) {
@@ -279,29 +269,13 @@ class _GameScreenState extends State<GameScreen>
             key: ValueKey(requestState),
             builder: (context) {
               if (requestState is RequestLoadInProgress) {
-                // return const HomePageShimmerLayout();
+                return SizedBox.shrink();
               } else if (requestState is RequestLoadSuccess) {
-                List<dynamic> jsonData = jsonDecode(requestState.body);
-                List<Map<String, dynamic>> allResults = jsonData[0]['humanOrAi']
-                    .map((item) {
-                      return {"link": item["link"], "op": item["op"]};
-                    })
-                    .toList()
-                    .cast<Map<String, dynamic>>();
-
-                List<Map<String, dynamic>> categories =
-                    jsonData[0]['categories']
-                        .map((item) {
-                          return {
-                            "categories": item,
-                          };
-                        })
-                        .toList()
-                        .cast<Map<String, dynamic>>();
-
-                if (_items.isEmpty &&
-                    searchController.selection.baseOffset == -1) {
-                  _items = allResults;
+                print('success');
+                final jsonData =
+                    jsonDecode(requestState.body) as Map<String, dynamic>;
+                if (gameImages.isEmpty) {
+                  setupImages(jsonData);
                 }
               }
               return Scaffold(
@@ -327,7 +301,6 @@ class _GameScreenState extends State<GameScreen>
                       children: [
                         Expanded(
                           child: Column(
-                            //mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: <Widget>[
                               gapH16,
                               const Padding(
@@ -370,12 +343,11 @@ class _GameScreenState extends State<GameScreen>
                                         index,
                                       ) {
                                         currentIndex = index;
-                                        images =
-                                            gameImages[index]['link'] as String;
 
                                         return Padding(
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: Sizes.p16),
+                                            horizontal: Sizes.p16,
+                                          ),
                                           child: ConstrainedBox(
                                             constraints: BoxConstraints(
                                               maxHeight: MediaQuery.of(context)
@@ -386,7 +358,8 @@ class _GameScreenState extends State<GameScreen>
                                               borderRadius:
                                                   BorderRadius.circular(20),
                                               child: CachedNetworkImage(
-                                                imageUrl: images,
+                                                imageUrl: gameImages[index]
+                                                    ['link'] as String,
                                                 fit: BoxFit.cover,
                                                 errorWidget:
                                                     (context, url, error) =>
