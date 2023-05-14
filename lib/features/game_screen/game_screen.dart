@@ -7,8 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:games_services/games_services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:humanai/ai_Image/humanimahge.dart';
-import 'package:humanai/ai_Image/linkImage.dart';
 import 'package:humanai/features/game_screen/widgets/game_over_dialog.dart';
 import 'package:humanai/features/game_screen/widgets/healh_display.dart';
 import 'package:humanai/modules/admob_service.dart';
