@@ -234,19 +234,6 @@ class _GameScreenState extends State<GameScreen>
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
           _rewardedAd = ad;
-          ad.fullScreenContentCallback = FullScreenContentCallback(
-            onAdShowedFullScreenContent: (ad) =>
-                log('ad onAdShowedFullScreenContent.'),
-            onAdDismissedFullScreenContent: (ad) {
-              log('ad onAdDismissedFullScreenContent.');
-              ad.dispose();
-            },
-            onAdFailedToShowFullScreenContent: (ad, error) {
-              log('ad onAdFailedToShowFullScreenContent: $error');
-              ad.dispose();
-            },
-            onAdImpression: (ad) => log('ad impression occurred.'),
-          );
         },
         onAdFailedToLoad: (error) {
           log('RewardedAd failed to load: $error');
