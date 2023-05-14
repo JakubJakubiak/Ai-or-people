@@ -112,6 +112,7 @@ class _GameScreenState extends State<GameScreen>
   }
 
   void _createBanerAd() {
+    if (!Constants.adsEnabled) return;
     _banner = BannerAd(
       size: AdSize.fullBanner,
       adUnitId: AdMobService.bannerAdUnitId,
@@ -149,7 +150,7 @@ class _GameScreenState extends State<GameScreen>
         score: score,
         onPlayAgain: reset,
         onContinuePlaying: () {
-          if (_rewardedAd != null) {
+          if (_rewardedAd != null && Constants.adsEnabled) {
             _rewardedAd?.show(
               onUserEarnedReward: (ad, reward) {
                 addFullHealth();
@@ -201,12 +202,8 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  Future<void> advertisement() async {
-    await _loadIntersitialAd();
-    reset();
-  }
-
   Future<void> _loadIntersitialAd() async {
+    if (!Constants.adsEnabled) return;
     await InterstitialAd.load(
       adUnitId: AdMobService.interstitialAdUnitId,
       request: const AdRequest(),
@@ -223,6 +220,7 @@ class _GameScreenState extends State<GameScreen>
 
   // load rewarded ad
   Future<void> _loadRewardedAd() async {
+    if (!Constants.adsEnabled) return;
     await RewardedAd.load(
       adUnitId: AdMobService.rewardedAdUnitID,
       request: const AdRequest(),
@@ -290,7 +288,7 @@ class _GameScreenState extends State<GameScreen>
               Flexible(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.width,
+                    maxHeight: MediaQuery.of(context).size.width - Sizes.p32,
                   ),
                   child: PageView.builder(
                     physics: const NeverScrollableScrollPhysics(),
@@ -399,7 +397,7 @@ class _GameScreenState extends State<GameScreen>
                 ),
               ),
               gapH16,
-              if (_banner != null)
+              if (_banner != null && Constants.adsEnabled)
                 SizedBox(
                   height: 50,
                   width: 320,

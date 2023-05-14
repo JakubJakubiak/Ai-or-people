@@ -69,7 +69,7 @@ class GameOverDialog extends StatelessWidget {
               children: [
                 Expanded(
                   child: SizedBox(
-                    height: 48,
+                    height: Sizes.p48,
                     child: FilledButton(
                       onPressed: () async {
                         // show confirmation dialog
@@ -107,7 +107,7 @@ class GameOverDialog extends StatelessWidget {
                         children: [
                           Icon(
                             Icons.play_arrow,
-                            size: 48,
+                            size: Sizes.p48,
                           ),
                           Text(
                             'Continue',
@@ -121,9 +121,9 @@ class GameOverDialog extends StatelessWidget {
                     ),
                   ),
                 ),
-                gapH16,
+                gapW16,
                 SizedBox(
-                  height: 48,
+                  height: Sizes.p48,
                   child: FilledButton(
                     child: const Icon(Icons.leaderboard, size: 42),
                     onPressed: () => Leaderboards.showLeaderboards(
