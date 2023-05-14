@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -14,6 +15,7 @@ import 'package:humanai/modules/admob_service.dart';
 import 'package:humanai/utils/constants.dart';
 import 'package:humanai/utils/gaps.dart';
 import 'package:humanai/utils/shared_preferences_helper.dart';
+import 'package:humanai/api/prompt.dart';
 
 enum CurrentAnswer { none, ai, human }
 
@@ -32,6 +34,11 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen>
     with SingleTickerProviderStateMixin {
   int currentHealth = 0;
+
+  List<Map<String, dynamic>> _items = [];
+  List<Map<String, dynamic>> _filteredItems = [];
+  TextEditingController searchController = TextEditingController();
+  final stateManager = HomePageManager();
 
   CurrentAnswer answer = CurrentAnswer.none;
   int score = 0;
@@ -143,6 +150,8 @@ class _GameScreenState extends State<GameScreen>
   }
 
   Future<Widget?> showGameOverDialog() {
+    // if (requestState is RequestLoadSuccess) {
+
     return showDialog<Widget>(
       context: context,
       barrierDismissible: false,
@@ -261,182 +270,241 @@ class _GameScreenState extends State<GameScreen>
   Widget build(BuildContext context) {
     var images = gameImages[currentIndex]['link'] as String;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: HealthDisplay(
-          currentHealth: currentHealth,
-          maxHealth: widget.initialHealth,
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              _showLeaderboards();
-            },
-            icon: const Icon(Icons.leaderboard),
-          ),
-          gapW8,
-        ],
-      ),
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            children: [
-              Expanded(
-                child: Column(
-                  //mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: <Widget>[
-                    gapH16,
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: Sizes.p16),
-                      child: Text(
-                        'Human-made or AI-generated?',
-                        maxLines: 5,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    gapH16,
-                    Text(
-                      '$score',
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    gapH16,
-                    Flexible(
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxHeight:
-                                MediaQuery.of(context).size.width - Sizes.p32,
-                          ),
-                          child: PageView.builder(
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: gameImages.length,
-                            controller: _pageController,
-                            itemBuilder: (context, index) {
-                              currentIndex = index;
-                              images = gameImages[index]['link'] as String;
+    return ValueListenableBuilder<RequestState>(
+      valueListenable: stateManager.resultNotifier,
+      builder: (context, requestState, child) {
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: Builder(
+            key: ValueKey(requestState),
+            builder: (context) {
+              if (requestState is RequestLoadInProgress) {
+                // return const HomePageShimmerLayout();
+              } else if (requestState is RequestLoadSuccess) {
+                List<dynamic> jsonData = jsonDecode(requestState.body);
+                List<Map<String, dynamic>> allResults = jsonData[0]['humanOrAi']
+                    .map((item) {
+                      return {"link": item["link"], "op": item["op"]};
+                    })
+                    .toList()
+                    .cast<Map<String, dynamic>>();
 
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: Sizes.p16),
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(
-                                    maxHeight:
-                                        MediaQuery.of(context).size.width,
+                List<Map<String, dynamic>> categories =
+                    jsonData[0]['categories']
+                        .map((item) {
+                          return {
+                            "categories": item,
+                          };
+                        })
+                        .toList()
+                        .cast<Map<String, dynamic>>();
+
+                if (_items.isEmpty &&
+                    searchController.selection.baseOffset == -1) {
+                  _items = allResults;
+                }
+              }
+              return Scaffold(
+                appBar: AppBar(
+                  title: HealthDisplay(
+                    currentHealth: currentHealth,
+                    maxHealth: widget.initialHealth,
+                  ),
+                  actions: [
+                    IconButton(
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        _showLeaderboards();
+                      },
+                      icon: const Icon(Icons.leaderboard),
+                    ),
+                    gapW8,
+                  ],
+                ),
+                body: SafeArea(
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            //mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: <Widget>[
+                              gapH16,
+                              const Padding(
+                                padding:
+                                    EdgeInsets.symmetric(horizontal: Sizes.p16),
+                                child: Text(
+                                  'Human-made or AI-generated?',
+                                  maxLines: 5,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(20),
-                                    child: CachedNetworkImage(
-                                      imageUrl: images,
-                                      fit: BoxFit.cover,
-                                      errorWidget: (context, url, error) =>
-                                          const Icon(Icons.error),
+                                ),
+                              ),
+                              gapH16,
+                              Text(
+                                '$score',
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              gapH16,
+                              Flexible(
+                                child: Center(
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxHeight:
+                                          MediaQuery.of(context).size.width -
+                                              Sizes.p32,
+                                    ),
+                                    child: PageView.builder(
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount: gameImages.length,
+                                      controller: _pageController,
+                                      itemBuilder: (
+                                        context,
+                                        index,
+                                      ) {
+                                        currentIndex = index;
+                                        images =
+                                            gameImages[index]['link'] as String;
+
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: Sizes.p16),
+                                          child: ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              maxHeight: MediaQuery.of(context)
+                                                  .size
+                                                  .width,
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              child: CachedNetworkImage(
+                                                imageUrl: images,
+                                                fit: BoxFit.cover,
+                                                errorWidget:
+                                                    (context, url, error) =>
+                                                        const Icon(Icons.error),
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
-                              );
-                            },
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              gapH16,
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: Sizes.p16),
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: SizedBox(
-                        height: 56,
-                        child: FilledButton(
-                          onPressed: () async {
-                            HapticFeedback.mediumImpact();
-                            if (currentHealth > 0) {
-                              await processResponse(
-                                categoryWin: 'ai',
-                                answer: CurrentAnswer.ai,
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: answer == CurrentAnswer.ai
-                                ? gameImages[currentIndex]['category'] == 'ai'
-                                    ? const Color.fromARGB(255, 41, 95, 43)
-                                    : const Color.fromARGB(255, 129, 42, 42)
-                                : const Color(0xff6750a4),
-                          ),
-                          child: Text(
-                            'AI',
-                            maxLines: 10,
-                            softWrap: false,
-                            style: TextStyle(
-                              fontSize: 24,
-                              color: Colors.grey[300],
-                              fontWeight: FontWeight.bold,
-                            ),
+                        gapH16,
+                        Padding(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: Sizes.p16),
+                          child: Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: SizedBox(
+                                  height: 56,
+                                  child: FilledButton(
+                                    onPressed: () async {
+                                      HapticFeedback.mediumImpact();
+                                      if (currentHealth > 0) {
+                                        await processResponse(
+                                          categoryWin: 'ai',
+                                          answer: CurrentAnswer.ai,
+                                        );
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          answer == CurrentAnswer.ai
+                                              ? gameImages[currentIndex]
+                                                          ['category'] ==
+                                                      'ai'
+                                                  ? const Color.fromARGB(
+                                                      255, 41, 95, 43)
+                                                  : const Color.fromARGB(
+                                                      255, 129, 42, 42)
+                                              : const Color(0xff6750a4),
+                                    ),
+                                    child: Text(
+                                      'AI',
+                                      maxLines: 10,
+                                      softWrap: false,
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        color: Colors.grey[300],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              gapW16,
+                              Expanded(
+                                child: SizedBox(
+                                  height: 56,
+                                  child: FilledButton(
+                                    onPressed: () async {
+                                      HapticFeedback.mediumImpact();
+                                      if (currentHealth > 0) {
+                                        await processResponse(
+                                          categoryWin: 'human',
+                                          answer: CurrentAnswer.human,
+                                        );
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          answer == CurrentAnswer.human
+                                              ? gameImages[currentIndex]
+                                                          ['category'] ==
+                                                      'human'
+                                                  ? const Color.fromARGB(
+                                                      255, 41, 95, 43)
+                                                  : const Color.fromARGB(
+                                                      255, 129, 42, 42)
+                                              : const Color(0xff6750a4),
+                                    ),
+                                    child: Text(
+                                      'Human',
+                                      maxLines: 10,
+                                      softWrap: false,
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        color: Colors.grey[300],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ),
-                    gapW16,
-                    Expanded(
-                      child: SizedBox(
-                        height: 56,
-                        child: FilledButton(
-                          onPressed: () async {
-                            HapticFeedback.mediumImpact();
-                            if (currentHealth > 0) {
-                              await processResponse(
-                                categoryWin: 'human',
-                                answer: CurrentAnswer.human,
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: answer == CurrentAnswer.human
-                                ? gameImages[currentIndex]['category'] ==
-                                        'human'
-                                    ? const Color.fromARGB(255, 41, 95, 43)
-                                    : const Color.fromARGB(255, 129, 42, 42)
-                                : const Color(0xff6750a4),
+                        gapH16,
+                        if (_banner != null && Constants.adsEnabled)
+                          SizedBox(
+                            height: 50,
+                            width: 320,
+                            child: AdWidget(ad: _banner!),
                           ),
-                          child: Text(
-                            'Human',
-                            maxLines: 10,
-                            softWrap: false,
-                            style: TextStyle(
-                              fontSize: 24,
-                              color: Colors.grey[300],
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-              gapH16,
-              if (_banner != null && Constants.adsEnabled)
-                SizedBox(
-                  height: 50,
-                  width: 320,
-                  child: AdWidget(ad: _banner!),
-                ),
-            ],
+              );
+            },
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
