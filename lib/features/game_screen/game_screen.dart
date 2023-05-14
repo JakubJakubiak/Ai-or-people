@@ -12,6 +12,7 @@ import 'package:humanai/features/game_screen/widgets/game_over_dialog.dart';
 import 'package:humanai/features/game_screen/widgets/healh_display.dart';
 import 'package:humanai/modules/admob_service.dart';
 import 'package:humanai/utils/constants.dart';
+import 'package:humanai/utils/gaps.dart';
 import 'package:humanai/utils/shared_preferences_helper.dart';
 
 enum CurrentAnswer { none, ai, human }
@@ -256,17 +257,17 @@ class _GameScreenState extends State<GameScreen>
             },
             icon: const Icon(Icons.leaderboard),
           ),
-          const SizedBox(width: 8)
+          gapW8,
         ],
       ),
       body: SafeArea(
         child: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: <Widget>[
-              const SizedBox(height: 20),
+              gapH16,
               const Padding(
-                padding: EdgeInsets.only(left: 30, right: 30),
+                padding: EdgeInsets.symmetric(horizontal: Sizes.p16),
                 child: Text(
                   'Human-made or AI-generated?',
                   maxLines: 5,
@@ -277,7 +278,7 @@ class _GameScreenState extends State<GameScreen>
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              gapH16,
               Text(
                 '$score',
                 style: const TextStyle(
@@ -285,41 +286,45 @@ class _GameScreenState extends State<GameScreen>
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 20),
-              SizedBox(
-                height: MediaQuery.of(context).size.width,
-                child: Stack(
-                  children: [
-                    SizedBox.fromSize(
-                      child: PageView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: gameImages.length,
-                        controller: _pageController,
-                        itemBuilder: (context, index) {
-                          currentIndex = index;
-                          images = gameImages[index]['link'] as String;
+              gapH16,
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.width,
+                  ),
+                  child: PageView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: gameImages.length,
+                    controller: _pageController,
+                    itemBuilder: (context, index) {
+                      currentIndex = index;
+                      images = gameImages[index]['link'] as String;
 
-                          return Padding(
-                            padding: const EdgeInsets.all(10),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: CachedNetworkImage(
-                                imageUrl: images,
-                                fit: BoxFit.cover,
-                                errorWidget: (context, url, error) =>
-                                    const Icon(Icons.error),
-                              ),
+                      return Padding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: Sizes.p16),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: MediaQuery.of(context).size.width,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: CachedNetworkImage(
+                              imageUrl: images,
+                              fit: BoxFit.cover,
+                              errorWidget: (context, url, error) =>
+                                  const Icon(Icons.error),
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
-              const Spacer(),
+              gapH16,
               Padding(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.symmetric(horizontal: Sizes.p16),
                 child: Row(
                   children: <Widget>[
                     Expanded(
@@ -355,7 +360,7 @@ class _GameScreenState extends State<GameScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    gapW16,
                     Expanded(
                       child: SizedBox(
                         height: 56,
@@ -393,7 +398,7 @@ class _GameScreenState extends State<GameScreen>
                   ],
                 ),
               ),
-              const Padding(padding: EdgeInsets.all(5)),
+              gapH16,
               if (_banner != null)
                 SizedBox(
                   height: 50,

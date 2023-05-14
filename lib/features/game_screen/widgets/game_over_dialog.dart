@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:games_services/games_services.dart';
+import 'package:humanai/utils/gaps.dart';
 import 'package:humanai/utils/shared_preferences_helper.dart';
 
 class GameOverDialog extends StatelessWidget {
@@ -120,7 +121,7 @@ class GameOverDialog extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                gapH16,
                 SizedBox(
                   height: 48,
                   child: FilledButton(
@@ -132,7 +133,7 @@ class GameOverDialog extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            gapH16,
             SizedBox(
               height: 48,
               child: FilledButton(
@@ -147,7 +148,7 @@ class GameOverDialog extends StatelessWidget {
                       Icons.replay,
                       size: 42,
                     ),
-                    SizedBox(width: 16),
+                    gapW16,
                     Text(
                       'Play Again',
                       style: TextStyle(
