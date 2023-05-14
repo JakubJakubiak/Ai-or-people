@@ -156,6 +156,8 @@ class _GameScreenState extends State<GameScreen>
                 addFullHealth();
               },
             );
+          } else {
+            addFullHealth();
           }
         },
       ),
@@ -261,63 +263,72 @@ class _GameScreenState extends State<GameScreen>
       body: SafeArea(
         child: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              gapH16,
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: Sizes.p16),
-                child: Text(
-                  'Human-made or AI-generated?',
-                  maxLines: 5,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              gapH16,
-              Text(
-                '$score',
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              gapH16,
-              Flexible(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.width - Sizes.p32,
-                  ),
-                  child: PageView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: gameImages.length,
-                    controller: _pageController,
-                    itemBuilder: (context, index) {
-                      currentIndex = index;
-                      images = gameImages[index]['link'] as String;
-
-                      return Padding(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: Sizes.p16),
+            children: [
+              Expanded(
+                child: Column(
+                  //mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: <Widget>[
+                    gapH16,
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: Sizes.p16),
+                      child: Text(
+                        'Human-made or AI-generated?',
+                        maxLines: 5,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    gapH16,
+                    Text(
+                      '$score',
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    gapH16,
+                    Flexible(
+                      child: Center(
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
-                            maxHeight: MediaQuery.of(context).size.width,
+                            maxHeight:
+                                MediaQuery.of(context).size.width - Sizes.p32,
                           ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: CachedNetworkImage(
-                              imageUrl: images,
-                              fit: BoxFit.cover,
-                              errorWidget: (context, url, error) =>
-                                  const Icon(Icons.error),
-                            ),
+                          child: PageView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: gameImages.length,
+                            controller: _pageController,
+                            itemBuilder: (context, index) {
+                              currentIndex = index;
+                              images = gameImages[index]['link'] as String;
+                      
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: Sizes.p16),
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxHeight: MediaQuery.of(context).size.width,
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: CachedNetworkImage(
+                                      imageUrl: images,
+                                      fit: BoxFit.cover,
+                                      errorWidget: (context, url, error) =>
+                                          const Icon(Icons.error),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               gapH16,
