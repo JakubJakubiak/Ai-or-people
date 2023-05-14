@@ -13,7 +13,7 @@ class GameOverDialog extends StatelessWidget {
 
   final int score;
   final VoidCallback onPlayAgain;
-  final VoidCallback onContinuePlaying;
+  final void Function(BuildContext dialogContext) onContinuePlaying;
 
   @override
   Widget build(BuildContext context) {
@@ -92,8 +92,7 @@ class GameOverDialog extends StatelessWidget {
                                 TextButton(
                                   onPressed: () {
                                     Navigator.of(context).pop();
-                                    Navigator.of(outerContext).pop();
-                                    onContinuePlaying();
+                                    onContinuePlaying(outerContext);
                                   },
                                   child: const Text('Yes'),
                                 ),
