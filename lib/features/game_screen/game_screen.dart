@@ -146,20 +146,23 @@ class _GameScreenState extends State<GameScreen>
     return showDialog<Widget>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => GameOverDialog(
-        score: score,
-        onPlayAgain: reset,
-        onContinuePlaying: () {
-          if (_rewardedAd != null && Constants.adsEnabled) {
-            _rewardedAd?.show(
-              onUserEarnedReward: (ad, reward) {
-                addFullHealth();
-              },
-            );
-          } else {
-            addFullHealth();
-          }
-        },
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false,
+        child: GameOverDialog(
+          score: score,
+          onPlayAgain: reset,
+          onContinuePlaying: () {
+            if (_rewardedAd != null && Constants.adsEnabled) {
+              _rewardedAd?.show(
+                onUserEarnedReward: (ad, reward) {
+                  addFullHealth();
+                },
+              );
+            } else {
+              addFullHealth();
+            }
+          },
+        ),
       ),
     );
   }
@@ -304,13 +307,14 @@ class _GameScreenState extends State<GameScreen>
                             itemBuilder: (context, index) {
                               currentIndex = index;
                               images = gameImages[index]['link'] as String;
-                      
+
                               return Padding(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: Sizes.p16),
                                 child: ConstrainedBox(
                                   constraints: BoxConstraints(
-                                    maxHeight: MediaQuery.of(context).size.width,
+                                    maxHeight:
+                                        MediaQuery.of(context).size.width,
                                   ),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(20),
