@@ -12,7 +12,6 @@ environment:
 
 dependencies:
   cached_network_image: ^3.2.3
-
   cupertino_icons: ^1.0.2
   facebook_app_events: ^0.18.3
   firebase_core: ^2.12.0
