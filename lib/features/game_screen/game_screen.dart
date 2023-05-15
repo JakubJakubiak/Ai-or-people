@@ -39,7 +39,7 @@ class _GameScreenState extends State<GameScreen>
   int currentHealth = 0;
   int score = 0;
   int currentIndex = 0;
-  int limitAdmob = 2;
+  int limitAdmob = 0;
 
   BannerAd? _banner;
 
@@ -63,6 +63,7 @@ class _GameScreenState extends State<GameScreen>
   void initState() {
     super.initState();
     currentHealth = widget.initialHealth;
+    limitAdmob = widget.limitAdmob;
     GamesServices.signIn();
     _createBanerAd();
     stateManager.makeGetRequest();
