@@ -72,32 +72,21 @@ class GameOverDialog extends StatelessWidget {
                 Expanded(
                   child: SizedBox(
                     height: Sizes.p48,
-                    child: FilledButton(
-                      onPressed: () async {
-                        // show confirmation dialog
-                        final outerContext = context;
-                        await showDialog<AlertDialog>(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const Text('Continue Playing?'),
-                              content: (limitAdmob <= 0)
-                                  ? const Text(
-                                      'The upgrade limit is max 2',
-                                    )
-                                  : const Text(
+                    child: (limitAdmob <= 0)
+                        ? null
+                        : FilledButton(
+                            onPressed: () async {
+                              // show confirmation dialog
+                              final outerContext = context;
+                              await showDialog<AlertDialog>(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: const Text('Continue Playing?'),
+                                    content: const Text(
                                       'Watch an ad to continue playing?',
                                     ),
-                              actions: (limitAdmob <= 0)
-                                  ? [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: const Text('back'),
-                                      ),
-                                    ]
-                                  : [
+                                    actions: [
                                       TextButton(
                                         onPressed: () {
                                           Navigator.of(context).pop();
@@ -112,27 +101,27 @@ class GameOverDialog extends StatelessWidget {
                                         child: const Text('Yes'),
                                       ),
                                     ],
-                            );
-                          },
-                        );
-                      },
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Icon(
-                            Icons.play_arrow,
-                            size: Sizes.p48,
-                          ),
-                          Text(
-                            'Continue',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                                  );
+                                },
+                              );
+                            },
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Icon(
+                                  Icons.play_arrow,
+                                  size: Sizes.p48,
+                                ),
+                                Text(
+                                  'Continue',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
                 gapW16,
