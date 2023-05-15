@@ -21,9 +21,11 @@ class GameScreen extends StatefulWidget {
   const GameScreen({
     super.key,
     this.initialHealth = 3,
+    this.limitAdmob = 2,
   });
 
   final int initialHealth;
+  final int limitAdmob;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -31,13 +33,14 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen>
     with SingleTickerProviderStateMixin {
-  int currentHealth = 0;
-
   final stateManager = HomePageManager();
-
   CurrentAnswer answer = CurrentAnswer.none;
+
+  int currentHealth = 0;
   int score = 0;
   int currentIndex = 0;
+  int limitAdmob = 2;
+
   BannerAd? _banner;
 
   List<Map<String, dynamic>> gameImages = [];
@@ -149,7 +152,9 @@ class _GameScreenState extends State<GameScreen>
         child: GameOverDialog(
           score: score,
           onPlayAgain: reset,
-          onContinuePlaying: (BuildContext dialogContext) async {
+          onContinuePlaying: (
+            BuildContext dialogContext,
+          ) async {
             if (_rewardedAd != null && Constants.adsEnabled) {
               await _rewardedAd?.show(
                 onUserEarnedReward: (ad, reward) {
@@ -162,6 +167,7 @@ class _GameScreenState extends State<GameScreen>
               Navigator.of(dialogContext).pop();
             }
           },
+          limitAdmob: limitAdmob,
         ),
       ),
     );
@@ -188,6 +194,7 @@ class _GameScreenState extends State<GameScreen>
 
   void addFullHealth() {
     setState(() {
+      limitAdmob--;
       currentHealth = 3;
     });
   }
@@ -195,6 +202,7 @@ class _GameScreenState extends State<GameScreen>
   void reset() {
     setState(() {
       currentHealth = 3;
+      limitAdmob = 2;
       score = 0;
     });
   }

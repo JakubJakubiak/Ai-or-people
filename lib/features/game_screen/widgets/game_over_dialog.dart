@@ -9,9 +9,11 @@ class GameOverDialog extends StatelessWidget {
     required this.score,
     required this.onPlayAgain,
     required this.onContinuePlaying,
+    required this.limitAdmob,
   });
 
   final int score;
+  final int limitAdmob;
   final VoidCallback onPlayAgain;
   final void Function(BuildContext dialogContext) onContinuePlaying;
 
@@ -79,24 +81,37 @@ class GameOverDialog extends StatelessWidget {
                           builder: (context) {
                             return AlertDialog(
                               title: const Text('Continue Playing?'),
-                              content: const Text(
-                                'Watch an ad to continue playing?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text('No'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                    onContinuePlaying(outerContext);
-                                  },
-                                  child: const Text('Yes'),
-                                ),
-                              ],
+                              content: (limitAdmob <= 0)
+                                  ? const Text(
+                                      'The upgrade limit is max 2',
+                                    )
+                                  : const Text(
+                                      'Watch an ad to continue playing?',
+                                    ),
+                              actions: (limitAdmob <= 0)
+                                  ? [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: const Text('back'),
+                                      ),
+                                    ]
+                                  : [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: const Text('No'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                          onContinuePlaying(outerContext);
+                                        },
+                                        child: const Text('Yes'),
+                                      ),
+                                    ],
                             );
                           },
                         );
