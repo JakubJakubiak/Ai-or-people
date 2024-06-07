@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:games_services/games_services.dart';
@@ -21,7 +22,7 @@ class GameScreen extends StatefulWidget {
   const GameScreen({
     super.key,
     this.initialHealth = 3,
-    this.limitAdmob = 2,
+    this.limitAdmob = 20000,
   });
 
   final int initialHealth;
@@ -39,11 +40,16 @@ class _GameScreenState extends State<GameScreen>
   int currentHealth = 0;
   int score = 0;
   int currentIndex = 0;
+  int currentIndexMusick = 0;
   int limitAdmob = 0;
+
+  final player = AudioPlayer();
+  bool isPlaying = false;
 
   BannerAd? _banner;
 
   List<Map<String, dynamic>> gameImages = [];
+  List<Map<String, dynamic>> musickList = [];
   Animation<double>? animation;
   dynamic sizeW;
   dynamic sizeH;
@@ -76,13 +82,12 @@ class _GameScreenState extends State<GameScreen>
     if (this.answer != CurrentAnswer.none) return;
     this.answer = answer;
 
-    if (categoryWin == gameImages[currentIndex]['category']) {
+    if (categoryWin == gameImages[currentIndex]['category'] ||
+        categoryWin == musickList[currentIndexMusick]['category']) {
       _incrementScore();
     } else {
       _loseHealth();
     }
-
-    // if last element, go to index 0 and shuffle gameImages
 
     Future<void> showNextImage() async {
       await _pageController.animateToPage(
@@ -148,8 +153,8 @@ class _GameScreenState extends State<GameScreen>
     return showDialog<Widget>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => WillPopScope(
-        onWillPop: () async => false,
+      builder: (context) => PopScope(
+        canPop: false,
         child: GameOverDialog(
           score: score,
           onPlayAgain: reset,
@@ -203,7 +208,7 @@ class _GameScreenState extends State<GameScreen>
   void reset() {
     setState(() {
       currentHealth = 3;
-      limitAdmob = 2;
+      limitAdmob = 2000;
       score = 0;
     });
   }
@@ -274,6 +279,35 @@ class _GameScreenState extends State<GameScreen>
     gameImages = mapped;
   }
 
+  void setupMusick(List<dynamic> jsonData, Map<String, dynamic> jsonDataAi) {
+    final mapped = jsonData.map<Map<String, dynamic>>((e) {
+      return {
+        'linkMusick': e['url'],
+        'category': 'human',
+        'track': e['track'],
+        'artistraw': e['artistraw'],
+        'imageCover': e['cover'],
+      };
+    }).toList();
+
+    final randomAi =
+        (jsonDataAi['playlists'] as List<dynamic>).expand((playlist) {
+      return (playlist['playlist_clips'] as List<dynamic>)
+          .map<Map<String, dynamic>>((clipData) {
+        final clip = clipData['clip'];
+        return {
+          'linkMusick': clip['audio_url'],
+          'imageCover': clip['image_url'],
+          'category': 'Ai',
+        };
+      });
+    }).toList();
+
+    musickList = (mapped + randomAi)..shuffle();
+    print("jsonDataAi///////");
+    print(musickList);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -299,6 +333,22 @@ class _GameScreenState extends State<GameScreen>
           builder: (context, requestState, child) {
             if (requestState is RequestLoadInProgress) {
               return const SizedBox.shrink();
+            }
+
+            if (requestState is RequestLoadSuccess) {
+              final jsonData = requestState.data;
+
+              final jsonDatatinyncsmusic =
+                  jsonData['tinyncsmusic'] as List<dynamic>;
+              final jsonDatatinyncsmusicAi =
+                  jsonData['musicAi'] as Map<String, dynamic>;
+              final jsonDataHumanOrAi =
+                  jsonData['humnOrAi'] as Map<String, dynamic>;
+
+              if (gameImages.isEmpty) setupImages(jsonDataHumanOrAi);
+              if (musickList.isEmpty) {
+                setupMusick(jsonDatatinyncsmusic, jsonDatatinyncsmusicAi);
+              }
             }
 
             if (requestState is RequestLoadFailure) {
@@ -329,15 +379,6 @@ class _GameScreenState extends State<GameScreen>
                       )
                     ]),
               );
-            }
-
-            if (requestState is RequestLoadSuccess) {
-              print('success');
-              final jsonData =
-                  jsonDecode(requestState.body) as Map<String, dynamic>;
-              if (gameImages.isEmpty) {
-                setupImages(jsonData);
-              }
             }
 
             return Center(
@@ -377,7 +418,10 @@ class _GameScreenState extends State<GameScreen>
                               ),
                               child: PageView.builder(
                                 physics: const NeverScrollableScrollPhysics(),
-                                itemCount: gameImages.length,
+                                itemCount:
+                                    (gameImages.length > musickList.length)
+                                        ? gameImages.length
+                                        : musickList.length,
                                 controller: _pageController,
                                 itemBuilder: (
                                   context,
@@ -389,21 +433,50 @@ class _GameScreenState extends State<GameScreen>
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: Sizes.p16,
                                     ),
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        maxHeight:
-                                            MediaQuery.of(context).size.width,
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(20),
-                                        child: CachedNetworkImage(
-                                          imageUrl: gameImages[index]['link']
-                                              as String,
-                                          fit: BoxFit.cover,
-                                          errorWidget: (context, url, error) =>
-                                              const Icon(Icons.error),
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          child: CachedNetworkImage(
+                                            imageUrl: gameImages[index]['link']
+                                                as String,
+                                            fit: BoxFit.cover,
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    const Icon(Icons.error),
+                                          ),
                                         ),
-                                      ),
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            if (isPlaying) {
+                                              await player.pause();
+                                            } else {
+                                              await player.play(
+                                                UrlSource(
+                                                  musickList.isNotEmpty &&
+                                                          currentIndexMusick <
+                                                              musickList.length
+                                                      ? musickList[
+                                                              currentIndexMusick]
+                                                          [
+                                                          'linkMusick'] as String
+                                                      : '',
+                                                ),
+                                              );
+                                            }
+                                            setState(() {
+                                              isPlaying = !isPlaying;
+                                            });
+                                          },
+                                          child: Icon(
+                                            isPlaying
+                                                ? Icons.pause
+                                                : Icons.play_arrow,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   );
                                 },
@@ -434,8 +507,11 @@ class _GameScreenState extends State<GameScreen>
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: answer == CurrentAnswer.ai
-                                    ? gameImages[currentIndex]['category'] ==
-                                            'ai'
+                                    ? (gameImages[currentIndex]['category'] ==
+                                                'ai' ||
+                                            musickList[currentIndexMusick]
+                                                    ['category'] ==
+                                                'ai')
                                         ? const Color.fromARGB(255, 41, 95, 43)
                                         : const Color.fromARGB(255, 129, 42, 42)
                                     : const Color(0xff6750a4),
@@ -459,7 +535,8 @@ class _GameScreenState extends State<GameScreen>
                             height: 56,
                             child: FilledButton(
                               onPressed: () async {
-                                HapticFeedback.mediumImpact();
+                                await HapticFeedback.mediumImpact();
+                                await player.stop();
                                 if (currentHealth > 0) {
                                   await processResponse(
                                     categoryWin: 'human',
@@ -469,8 +546,11 @@ class _GameScreenState extends State<GameScreen>
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: answer == CurrentAnswer.human
-                                    ? gameImages[currentIndex]['category'] ==
-                                            'human'
+                                    ? (gameImages[currentIndex]['category'] ==
+                                                'human' ||
+                                            musickList[currentIndexMusick]
+                                                    ['category'] ==
+                                                'human')
                                         ? const Color.fromARGB(255, 41, 95, 43)
                                         : const Color.fromARGB(255, 129, 42, 42)
                                     : const Color(0xff6750a4),

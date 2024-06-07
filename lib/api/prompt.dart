@@ -6,35 +6,48 @@ class HomePageManager {
   final resultNotifier = ValueNotifier<RequestState>(RequestInitial());
   static const urlPrefix =
       'https://raw.githubusercontent.com/JakubJakubiak/jsonList/main/humnOrAi.json';
+  static const urlMusickHuman =
+      'https://raw.githubusercontent.com/JakubJakubiak/jsonList/main/tinyncsmusic.json';
+  static const urlMusickAi =
+      'https://raw.githubusercontent.com/JakubJakubiak/jsonList/main/SunoMusicList.json';
 
   Future<void> makeGetRequest() async {
     resultNotifier.value = RequestLoadInProgress();
-    final url = Uri.parse('$urlPrefix');
+    final uriPrefix = Uri.parse(urlPrefix);
+    final uriMusickHuman = Uri.parse(urlMusickHuman);
+    final uriMusickAi = Uri.parse(urlMusickAi);
+
     try {
-      Response response = await get(url);
-      _handleResponse(response);
+      final responses = await Future.wait([
+        get(uriPrefix),
+        get(uriMusickHuman),
+        get(uriMusickAi),
+      ]);
+
+      _handleResponses(responses[0], responses[1], responses[2]);
     } catch (e) {
       resultNotifier.value = RequestLoadFailure();
     }
   }
 
-  Future<void> makePostRequest() async {
-    resultNotifier.value = RequestLoadInProgress();
-    final url = Uri.parse('$urlPrefix');
-    final headers = {"Content-type": "application/json"};
-    final response = await post(url, headers: headers, body: json);
-    _handleResponse(response);
-  }
-
-  void _handleResponse(Response response) {
-    if (response.statusCode >= 400) {
+  void _handleResponses(
+    Response response,
+    Response responseMusick,
+    Response responseMusickAi,
+  ) {
+    if (response.statusCode >= 400 ||
+        responseMusick.statusCode >= 400 ||
+        responseMusickAi.statusCode >= 400) {
       resultNotifier.value = RequestLoadFailure();
     } else {
-      resultNotifier.value = RequestLoadSuccess(response.body);
+      final data = {
+        'humnOrAi': jsonDecode(response.body),
+        'tinyncsmusic': jsonDecode(responseMusick.body),
+        'musicAi': jsonDecode(responseMusickAi.body),
+      };
+      resultNotifier.value = RequestLoadSuccess(data);
     }
   }
-
-  void searchData(String searchText) {}
 }
 
 class RequestState {
@@ -46,8 +59,8 @@ class RequestInitial extends RequestState {}
 class RequestLoadInProgress extends RequestState {}
 
 class RequestLoadSuccess extends RequestState {
-  const RequestLoadSuccess(this.body);
-  final String body;
+  const RequestLoadSuccess(this.data);
+  final Map<String, dynamic> data;
 }
 
 class RequestLoadFailure extends RequestState {}
