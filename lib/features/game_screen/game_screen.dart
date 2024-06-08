@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:math';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -45,6 +46,7 @@ class _GameScreenState extends State<GameScreen>
 
   final player = AudioPlayer();
   bool isPlaying = false;
+  bool musicOrImages = false;
 
   BannerAd? _banner;
 
@@ -90,11 +92,16 @@ class _GameScreenState extends State<GameScreen>
     }
 
     Future<void> showNextImage() async {
+      Random random = Random();
+      double randomValue = random.nextDouble();
+
       await _pageController.animateToPage(
         _pageController.page!.toInt() + 1,
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeInOut,
       );
+      musicOrImages = randomValue < 0.8;
+      setState(() {});
     }
 
     timer = Timer(const Duration(milliseconds: 600), () {
@@ -248,21 +255,22 @@ class _GameScreenState extends State<GameScreen>
           _rewardedAd = ad;
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdShowedFullScreenContent: (ad) =>
-                log('ad onAdShowedFullScreenContent.'),
+                // log('ad onAdShowedFullScreenContent.'),
+                print('ad onAdShowedFullScreenContent.'),
             onAdDismissedFullScreenContent: (ad) async {
-              log('ad onAdDismissedFullScreenContent.');
+              print('ad onAdDismissedFullScreenContent.');
               await ad.dispose();
               await _loadRewardedAd();
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
-              log('ad onAdFailedToShowFullScreenContent: $error');
+              print('ad onAdFailedToShowFullScreenContent: $error');
               ad.dispose();
             },
-            onAdImpression: (ad) => log('ad impression.'),
+            onAdImpression: (ad) => print('ad impression.'),
           );
         },
         onAdFailedToLoad: (error) {
-          log('RewardedAd failed to load: $error');
+          print('RewardedAd failed to load: $error');
           _rewardedAd = null;
         },
       ),
@@ -298,14 +306,12 @@ class _GameScreenState extends State<GameScreen>
         return {
           'linkMusick': clip['audio_url'],
           'imageCover': clip['image_url'],
-          'category': 'Ai',
+          'category': 'ai',
         };
       });
     }).toList();
 
     musickList = (mapped + randomAi)..shuffle();
-    print("jsonDataAi///////");
-    print(musickList);
   }
 
   @override
@@ -428,6 +434,7 @@ class _GameScreenState extends State<GameScreen>
                                   index,
                                 ) {
                                   currentIndex = index;
+                                  currentIndexMusick = index;
 
                                   return Padding(
                                     padding: const EdgeInsets.symmetric(
@@ -440,42 +447,52 @@ class _GameScreenState extends State<GameScreen>
                                           borderRadius:
                                               BorderRadius.circular(20),
                                           child: CachedNetworkImage(
-                                            imageUrl: gameImages[index]['link']
-                                                as String,
+                                            imageUrl: musicOrImages
+                                                ? musickList[currentIndexMusick]
+                                                    ['imageCover'] as String
+                                                : gameImages[index]['link']
+                                                    as String,
                                             fit: BoxFit.cover,
                                             errorWidget:
                                                 (context, url, error) =>
                                                     const Icon(Icons.error),
                                           ),
                                         ),
-                                        ElevatedButton(
-                                          onPressed: () async {
-                                            if (isPlaying) {
-                                              await player.pause();
-                                            } else {
-                                              await player.play(
-                                                UrlSource(
-                                                  musickList.isNotEmpty &&
-                                                          currentIndexMusick <
-                                                              musickList.length
-                                                      ? musickList[
-                                                              currentIndexMusick]
-                                                          [
-                                                          'linkMusick'] as String
-                                                      : '',
-                                                ),
-                                              );
-                                            }
-                                            setState(() {
-                                              isPlaying = !isPlaying;
-                                            });
-                                          },
-                                          child: Icon(
-                                            isPlaying
-                                                ? Icons.pause
-                                                : Icons.play_arrow,
-                                          ),
-                                        ),
+                                        if (musicOrImages)
+                                          ElevatedButton(
+                                            onPressed: () async {
+                                              if (isPlaying) {
+                                                await player.pause();
+                                              } else {
+                                                await player.play(
+                                                  UrlSource(
+                                                    musickList.isNotEmpty &&
+                                                            currentIndexMusick <
+                                                                musickList
+                                                                    .length
+                                                        ? musickList[
+                                                                currentIndexMusick]
+                                                            [
+                                                            'linkMusick'] as String
+                                                        : '',
+                                                  ),
+                                                );
+                                              }
+                                              setState(() {
+                                                isPlaying = !isPlaying;
+                                              });
+                                            },
+                                            child: Icon(
+                                              isPlaying
+                                                  ? Icons.pause
+                                                  : Icons.play_arrow,
+                                            ),
+                                          )
+                                        else
+                                          Container(),
+                                        musicOrImages
+                                            ? Container()
+                                            : const Icon(Icons.error)
                                       ],
                                     ),
                                   );
