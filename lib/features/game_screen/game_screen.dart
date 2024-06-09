@@ -122,7 +122,7 @@ class _GameScreenState extends State<GameScreen>
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeInOut,
       );
-      musicOrImages = randomValue < 0.8;
+      musicOrImages = randomValue < 0.5;
       await player.pause();
       setState(() {
         position = Duration.zero;
@@ -183,8 +183,6 @@ class _GameScreenState extends State<GameScreen>
   }
 
   Future<Widget?> showGameOverDialog() {
-    // if (requestState is RequestLoadSuccess) {
-
     return showDialog<Widget>(
       context: context,
       barrierDismissible: false,
@@ -490,10 +488,9 @@ class _GameScreenState extends State<GameScreen>
                                               BorderRadius.circular(20),
                                           child: CachedNetworkImage(
                                             imageUrl: musicOrImages
-                                                ? "https://i.imgur.com/9IAD2q9.jpeg"
+                                                ? 'https://i.imgur.com/9IAD2q9.jpeg'
                                                 // musickList[currentIndexMusick]
                                                 //     ['imageCover'] as String
-
                                                 : gameImages[index]['link']
                                                     as String,
                                             fit: BoxFit.cover,
