@@ -490,8 +490,10 @@ class _GameScreenState extends State<GameScreen>
                                               BorderRadius.circular(20),
                                           child: CachedNetworkImage(
                                             imageUrl: musicOrImages
-                                                ? musickList[currentIndexMusick]
-                                                    ['imageCover'] as String
+                                                ? "https://i.imgur.com/9IAD2q9.jpeg"
+                                                // musickList[currentIndexMusick]
+                                                //     ['imageCover'] as String
+
                                                 : gameImages[index]['link']
                                                     as String,
                                             fit: BoxFit.cover,
@@ -533,6 +535,55 @@ class _GameScreenState extends State<GameScreen>
                                           )
                                         else
                                           Container(),
+                                        if (musicOrImages)
+                                          Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 300,
+                                                bottom: 20,
+                                                left: Sizes.p16,
+                                                right: Sizes.p16,
+                                              ),
+                                              child: Container(
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey[900]
+                                                        ?.withOpacity(0.8),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                    top: 20,
+                                                    bottom: 20,
+                                                    left: Sizes.p16,
+                                                    right: Sizes.p16,
+                                                  ),
+                                                  child: ProgressBar(
+                                                    progress: position,
+                                                    total: duration,
+                                                    onSeek: (value) async {
+                                                      await player.seek(
+                                                        Duration(
+                                                            seconds: value
+                                                                .inSeconds),
+                                                      );
+                                                    },
+                                                    // timeLabelLocation:
+                                                    //     TimeLabelLocation.sides,
+                                                    barHeight: 10,
+                                                    baseBarColor: Colors.grey,
+                                                    thumbColor: Colors.blue,
+                                                    progressBarColor:
+                                                        Colors.blue,
+                                                    bufferedBarColor:
+                                                        Colors.grey,
+                                                    timeLabelTextStyle:
+                                                        const TextStyle(
+                                                      fontSize: 12,
+                                                    ),
+                                                  )))
+                                        else
+                                          Container(),
                                       ],
                                     ),
                                   );
@@ -545,28 +596,28 @@ class _GameScreenState extends State<GameScreen>
                     ),
                   ),
                   gapH16,
-                  if (musicOrImages)
-                    Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: Sizes.p16,
-                        ),
-                        child: ProgressBar(
-                          progress: position,
-                          total: duration,
-                          onSeek: (value) async {
-                            await player
-                                .seek(Duration(seconds: value.inSeconds));
-                          },
-                          barHeight: 10,
-                          baseBarColor: Colors.grey,
-                          progressBarColor: Colors.blue,
-                          bufferedBarColor: Colors.grey,
-                          timeLabelTextStyle: const TextStyle(
-                            fontSize: 12,
-                          ),
-                        ))
-                  else
-                    Container(),
+                  // if (musicOrImages)
+                  //   Padding(
+                  //       padding: const EdgeInsets.symmetric(
+                  //         horizontal: Sizes.p16,
+                  //       ),
+                  //       child: ProgressBar(
+                  //         progress: position,
+                  //         total: duration,
+                  //         onSeek: (value) async {
+                  //           await player
+                  //               .seek(Duration(seconds: value.inSeconds));
+                  //         },
+                  //         barHeight: 10,
+                  //         baseBarColor: Colors.grey,
+                  //         progressBarColor: Colors.blue,
+                  //         bufferedBarColor: Colors.grey,
+                  //         timeLabelTextStyle: const TextStyle(
+                  //           fontSize: 12,
+                  //         ),
+                  //       ))
+                  // else
+                  //   Container(),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: Sizes.p16),
                     child: Row(
