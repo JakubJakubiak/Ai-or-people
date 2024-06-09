@@ -16,6 +16,7 @@ import 'package:humanai/utils/constants.dart';
 import 'package:humanai/utils/gaps.dart';
 import 'package:humanai/utils/shared_preferences_helper.dart';
 import 'package:humanai/api/prompt.dart';
+import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 
 enum CurrentAnswer { none, ai, human }
 
@@ -45,6 +46,7 @@ class _GameScreenState extends State<GameScreen>
   int limitAdmob = 0;
 
   final player = AudioPlayer();
+
   bool isPlaying = false;
   bool musicOrImages = false;
 
@@ -61,12 +63,21 @@ class _GameScreenState extends State<GameScreen>
 
   RewardedAd? _rewardedAd;
 
+  String _printDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return "$twoDigitMinutes:$twoDigitSeconds";
+  }
+
   void _incrementScore() {
     setState(() {
       score++;
     });
   }
 
+  Duration duration = Duration.zero;
+  Duration position = Duration.zero;
   @override
   void initState() {
     super.initState();
@@ -75,6 +86,17 @@ class _GameScreenState extends State<GameScreen>
     GamesServices.signIn();
     _createBanerAd();
     stateManager.makeGetRequest();
+
+    player.onDurationChanged.listen((d) {
+      setState(() {
+        duration = d;
+      });
+    });
+    player.onPositionChanged.listen((p) {
+      setState(() {
+        position = p;
+      });
+    });
   }
 
   Future<void> processResponse({
@@ -101,7 +123,12 @@ class _GameScreenState extends State<GameScreen>
         curve: Curves.easeInOut,
       );
       musicOrImages = randomValue < 0.8;
-      setState(() {});
+      await player.pause();
+      setState(() {
+        position = Duration.zero;
+        duration = Duration.zero;
+        isPlaying = false;
+      });
     }
 
     timer = Timer(const Duration(milliseconds: 600), () {
@@ -120,6 +147,7 @@ class _GameScreenState extends State<GameScreen>
 
   @override
   void dispose() {
+    player.dispose();
     super.dispose();
   }
 
@@ -285,6 +313,20 @@ class _GameScreenState extends State<GameScreen>
       ..shuffle();
 
     gameImages = mapped;
+  }
+
+  void statusPlayer() {
+    player.onPositionChanged.listen((Duration position) {
+      setState(() {
+        this.position = position;
+      });
+    });
+
+    player.onDurationChanged.listen((Duration duration) {
+      setState(() {
+        this.duration = duration;
+      });
+    });
   }
 
   void setupMusick(List<dynamic> jsonData, Map<String, dynamic> jsonDataAi) {
@@ -477,6 +519,7 @@ class _GameScreenState extends State<GameScreen>
                                                         : '',
                                                   ),
                                                 );
+                                                statusPlayer();
                                               }
                                               setState(() {
                                                 isPlaying = !isPlaying;
@@ -490,9 +533,6 @@ class _GameScreenState extends State<GameScreen>
                                           )
                                         else
                                           Container(),
-                                        musicOrImages
-                                            ? Container()
-                                            : const Icon(Icons.error)
                                       ],
                                     ),
                                   );
@@ -505,6 +545,28 @@ class _GameScreenState extends State<GameScreen>
                     ),
                   ),
                   gapH16,
+                  if (musicOrImages)
+                    Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Sizes.p16,
+                        ),
+                        child: ProgressBar(
+                          progress: position,
+                          total: duration,
+                          onSeek: (value) async {
+                            await player
+                                .seek(Duration(seconds: value.inSeconds));
+                          },
+                          barHeight: 10,
+                          baseBarColor: Colors.grey,
+                          progressBarColor: Colors.blue,
+                          bufferedBarColor: Colors.grey,
+                          timeLabelTextStyle: const TextStyle(
+                            fontSize: 12,
+                          ),
+                        ))
+                  else
+                    Container(),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: Sizes.p16),
                     child: Row(
