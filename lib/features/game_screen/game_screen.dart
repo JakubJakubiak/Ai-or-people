@@ -116,19 +116,22 @@ class _GameScreenState extends State<GameScreen>
     Future<void> showNextImage() async {
       Random random = Random();
       double randomValue = random.nextDouble();
+      musicOrImages = await randomValue < 0.5;
 
       await _pageController.animateToPage(
         _pageController.page!.toInt() + 1,
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeInOut,
       );
-      musicOrImages = randomValue < 0.5;
+      
       await player.pause();
       setState(() {
         position = Duration.zero;
         duration = Duration.zero;
         isPlaying = false;
       });
+
+      await indexBuforImages();
     }
 
     timer = Timer(const Duration(milliseconds: 600), () {
@@ -176,6 +179,17 @@ class _GameScreenState extends State<GameScreen>
     saveBestScore(score);
     showGameOverDialog();
   }
+
+  // void endGame() async {
+  //   try {
+  //     _loadRewardedAd();
+  //     saveBestScore(score);
+  //     await _submitScore(score);
+  //     await showGameOverDialog();
+  //   } catch (e) {
+  //     print('Error: $e');
+  //   }
+  // }
 
   void saveBestScore(int score) {
     final bestScore = SharedPreferencesHelper.getBestScore();
@@ -354,6 +368,19 @@ class _GameScreenState extends State<GameScreen>
     musickList = (mapped + randomAi)..shuffle();
   }
 
+
+ Future<void> indexBuforImages() async {
+    int currentIn = this.currentIndex;
+    int imagesToPrecache = 5; 
+    for (int i = 1; i <= imagesToPrecache; i++) {
+      int nextIndex = (currentIn + i) % gameImages.length;
+      await precacheImage(
+        CachedNetworkImageProvider(gameImages[nextIndex]['link']),
+        context,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -486,11 +513,11 @@ class _GameScreenState extends State<GameScreen>
                                         ClipRRect(
                                           borderRadius:
                                               BorderRadius.circular(20),
-                                          child: CachedNetworkImage(
+                                          child:
+                                          
+                                          CachedNetworkImage(
                                             imageUrl: musicOrImages
                                                 ? 'https://i.imgur.com/9IAD2q9.jpeg'
-                                                // musickList[currentIndexMusick]
-                                                //     ['imageCover'] as String
                                                 : gameImages[index]['link']
                                                     as String,
                                             fit: BoxFit.cover,
@@ -498,7 +525,9 @@ class _GameScreenState extends State<GameScreen>
                                                 (context, url, error) =>
                                                     const Icon(Icons.error),
                                           ),
+                                     
                                         ),
+                                       
                                         if (musicOrImages)
                                           ElevatedButton(
                                             onPressed: () async {
