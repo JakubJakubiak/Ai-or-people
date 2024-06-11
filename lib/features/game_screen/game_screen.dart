@@ -43,6 +43,7 @@ class _GameScreenState extends State<GameScreen>
   int score = 0;
   int currentIndex = 0;
   int currentIndexMusick = 0;
+  int currentIndexQuote = 0;
   int limitAdmob = 0;
 
   final player = AudioPlayer();
@@ -54,6 +55,8 @@ class _GameScreenState extends State<GameScreen>
 
   List<Map<String, dynamic>> gameImages = [];
   List<Map<String, dynamic>> musickList = [];
+  List<Map<String, dynamic>> quoteList = [];
+
   Animation<double>? animation;
   dynamic sizeW;
   dynamic sizeH;
@@ -515,6 +518,7 @@ Future<void> indexBuforMusic() async {
                                 ) {
                                   currentIndex = index;
                                   currentIndexMusick = index;
+                                  currentIndexQuote = index;
 
                                   return Padding(
                                     padding: const EdgeInsets.symmetric(
@@ -527,7 +531,7 @@ Future<void> indexBuforMusic() async {
                                           borderRadius:
                                               BorderRadius.circular(20),
                                           child:
-                                          
+                                          // (musicOrImagesOrQuote != "Quote") ?
                                           CachedNetworkImage(
                                             imageUrl: musicOrImagesOrQuote == "Music"
                                                 ? 'https://i.imgur.com/9IAD2q9.jpeg'
@@ -537,8 +541,22 @@ Future<void> indexBuforMusic() async {
                                             errorWidget:
                                                 (context, url, error) =>
                                                     const Icon(Icons.error),
-                                          ),
-                                        ),                                    
+                                          )
+                                          // :  
+                                          // Positioned.fill(
+                                          //     child: Align(
+                                          //       alignment: Alignment.center,
+                                          //       child: SingleChildScrollView(
+                                          //         child: Padding(
+                                          //           padding: const EdgeInsets.all(8.0),
+                                          //           child: Text(
+                                          //             " textddddst text $musicOrImagesOrQuote",
+                                          //             textAlign: TextAlign.center,
+                                          //           ),
+                                          //         ),
+                                          //       ),)),                                
+                                        ), 
+                                
                                         if (musicOrImagesOrQuote == "Music")
                                           ElevatedButton(
                                             onPressed: () async {
