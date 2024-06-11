@@ -48,7 +48,7 @@ class _GameScreenState extends State<GameScreen>
   final player = AudioPlayer();
 
   bool isPlaying = false;
-  bool musicOrImages = false;
+  String musicOrImagesOrQuote = "Images";
 
   BannerAd? _banner;
 
@@ -115,8 +115,9 @@ class _GameScreenState extends State<GameScreen>
 
     Future<void> showNextImage() async {
       Random random = Random();
-      double randomValue = random.nextDouble();
-      musicOrImages = await randomValue < 0.5;
+      int randomIndex  = random.nextInt(3);
+      const randomSelection = ["Music","Quote","Images"];
+
 
       await _pageController.animateToPage(
         _pageController.page!.toInt() + 1,
@@ -129,9 +130,11 @@ class _GameScreenState extends State<GameScreen>
         position = Duration.zero;
         duration = Duration.zero;
         isPlaying = false;
+        musicOrImagesOrQuote = '${randomSelection[randomIndex]}';
       });
 
-      await indexBuforImages();
+
+      indexBuforImages();
       indexBuforMusic();
     }
 
@@ -526,7 +529,7 @@ Future<void> indexBuforMusic() async {
                                           child:
                                           
                                           CachedNetworkImage(
-                                            imageUrl: musicOrImages
+                                            imageUrl: musicOrImagesOrQuote == "Music"
                                                 ? 'https://i.imgur.com/9IAD2q9.jpeg'
                                                 : gameImages[index]['link']
                                                     as String,
@@ -536,7 +539,7 @@ Future<void> indexBuforMusic() async {
                                                     const Icon(Icons.error),
                                           ),
                                         ),                                    
-                                        if (musicOrImages)
+                                        if (musicOrImagesOrQuote == "Music")
                                           ElevatedButton(
                                             onPressed: () async {
                                               if (isPlaying) {
@@ -569,7 +572,7 @@ Future<void> indexBuforMusic() async {
                                           )
                                         else
                                           Container(),
-                                        if (musicOrImages)
+                                        if (musicOrImagesOrQuote == "Music")
                                           Padding(
                                               padding: const EdgeInsets.only(
                                                 top: 300,
@@ -602,8 +605,7 @@ Future<void> indexBuforMusic() async {
                                                                 .inSeconds),
                                                       );
                                                     },
-                                                    // timeLabelLocation:
-                                                    //     TimeLabelLocation.sides,
+
                                                     barHeight: 10,
                                                     baseBarColor: Colors.grey,
                                                     thumbColor: Colors.blue,
