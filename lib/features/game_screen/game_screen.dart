@@ -132,6 +132,7 @@ class _GameScreenState extends State<GameScreen>
       });
 
       await indexBuforImages();
+      indexBuforMusic();
     }
 
     timer = Timer(const Duration(milliseconds: 600), () {
@@ -381,6 +382,15 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
+Future<void> indexBuforMusic() async {
+  int currentInMusick = this.currentIndexMusick;
+  int musicToPrecache = 5;
+  for (int i = 1; i <= musicToPrecache; i++) {
+    int nextIndex = (currentInMusick + i) % musickList.length;
+    await player.setSource(musickList[nextIndex]['linkMusick'] );
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -525,9 +535,7 @@ class _GameScreenState extends State<GameScreen>
                                                 (context, url, error) =>
                                                     const Icon(Icons.error),
                                           ),
-                                     
-                                        ),
-                                       
+                                        ),                                    
                                         if (musicOrImages)
                                           ElevatedButton(
                                             onPressed: () async {
@@ -622,28 +630,6 @@ class _GameScreenState extends State<GameScreen>
                     ),
                   ),
                   gapH16,
-                  // if (musicOrImages)
-                  //   Padding(
-                  //       padding: const EdgeInsets.symmetric(
-                  //         horizontal: Sizes.p16,
-                  //       ),
-                  //       child: ProgressBar(
-                  //         progress: position,
-                  //         total: duration,
-                  //         onSeek: (value) async {
-                  //           await player
-                  //               .seek(Duration(seconds: value.inSeconds));
-                  //         },
-                  //         barHeight: 10,
-                  //         baseBarColor: Colors.grey,
-                  //         progressBarColor: Colors.blue,
-                  //         bufferedBarColor: Colors.grey,
-                  //         timeLabelTextStyle: const TextStyle(
-                  //           fontSize: 12,
-                  //         ),
-                  //       ))
-                  // else
-                  //   Container(),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: Sizes.p16),
                     child: Row(
@@ -662,6 +648,10 @@ class _GameScreenState extends State<GameScreen>
                                 }
                               },
                               style: ElevatedButton.styleFrom(
+                              side: BorderSide(
+                              color: Colors.white, 
+                              width: 2, 
+                            ),
                                 backgroundColor: answer == CurrentAnswer.ai
                                     ? (gameImages[currentIndex]['category'] ==
                                                 'ai' ||
@@ -670,7 +660,7 @@ class _GameScreenState extends State<GameScreen>
                                                 'ai')
                                         ? const Color.fromARGB(255, 41, 95, 43)
                                         : const Color.fromARGB(255, 129, 42, 42)
-                                    : const Color(0xff6750a4),
+                                    :  Colors.transparent,
                               ),
                               child: Text(
                                 'AI',
@@ -701,6 +691,10 @@ class _GameScreenState extends State<GameScreen>
                                 }
                               },
                               style: ElevatedButton.styleFrom(
+                              side: BorderSide(
+                              color: Colors.white, 
+                              width: 2, 
+                            ),
                                 backgroundColor: answer == CurrentAnswer.human
                                     ? (gameImages[currentIndex]['category'] ==
                                                 'human' ||
@@ -709,7 +703,7 @@ class _GameScreenState extends State<GameScreen>
                                                 'human')
                                         ? const Color.fromARGB(255, 41, 95, 43)
                                         : const Color.fromARGB(255, 129, 42, 42)
-                                    : const Color(0xff6750a4),
+                                    :  Colors.transparent,
                               ),
                               child: Text(
                                 'Human',
