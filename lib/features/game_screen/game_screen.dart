@@ -57,6 +57,8 @@ class _GameScreenState extends State<GameScreen>
   List<Map<String, dynamic>> musickList = [];
   List<Map<String, dynamic>> quoteList = [];
 
+  // double scaleFactor = constraints.maxWidth / 375.0;
+
   Animation<double>? animation;
   dynamic sizeW;
   dynamic sizeH;
@@ -118,16 +120,15 @@ class _GameScreenState extends State<GameScreen>
 
     Future<void> showNextImage() async {
       Random random = Random();
-      int randomIndex  = random.nextInt(3);
-      const randomSelection = ["Music","Quote","Images"];
-
+      int randomIndex = random.nextInt(3);
+      const randomSelection = ["Music", "Quote", "Images"];
 
       await _pageController.animateToPage(
         _pageController.page!.toInt() + 1,
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeInOut,
       );
-      
+
       await player.pause();
       setState(() {
         position = Duration.zero;
@@ -135,7 +136,6 @@ class _GameScreenState extends State<GameScreen>
         isPlaying = false;
         musicOrImagesOrQuote = '${randomSelection[randomIndex]}';
       });
-
 
       indexBuforImages();
       indexBuforMusic();
@@ -327,7 +327,7 @@ class _GameScreenState extends State<GameScreen>
   void setupImages(Map<String, dynamic> jsonData) {
     final imagesList = jsonData['humanOrAi'] as List<dynamic>;
     final mapped = imagesList.cast<Map<String, dynamic>>().map((e) {
-      return {'link': e['link'], 'category': e['op']};
+      return {'link': e['link'], 'category': e['op'], 'typ': 'images'};
     }).toList()
       ..shuffle();
 
@@ -356,6 +356,7 @@ class _GameScreenState extends State<GameScreen>
         'track': e['track'],
         'artistraw': e['artistraw'],
         'imageCover': e['cover'],
+        'typ': 'musick'
       };
     }).toList();
 
@@ -368,6 +369,7 @@ class _GameScreenState extends State<GameScreen>
           'linkMusick': clip['audio_url'],
           'imageCover': clip['image_url'],
           'category': 'ai',
+          'typ': 'musick'
         };
       });
     }).toList();
@@ -375,10 +377,9 @@ class _GameScreenState extends State<GameScreen>
     musickList = (mapped + randomAi)..shuffle();
   }
 
-
- Future<void> indexBuforImages() async {
+  Future<void> indexBuforImages() async {
     int currentIn = this.currentIndex;
-    int imagesToPrecache = 5; 
+    int imagesToPrecache = 5;
     for (int i = 1; i <= imagesToPrecache; i++) {
       int nextIndex = (currentIn + i) % gameImages.length;
       await precacheImage(
@@ -388,14 +389,14 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
-Future<void> indexBuforMusic() async {
-  int currentInMusick = this.currentIndexMusick;
-  int musicToPrecache = 5;
-  for (int i = 1; i <= musicToPrecache; i++) {
-    int nextIndex = (currentInMusick + i) % musickList.length;
-    await player.setSource(musickList[nextIndex]['linkMusick'] );
+  Future<void> indexBuforMusic() async {
+    int currentInMusick = this.currentIndexMusick;
+    int musicToPrecache = 5;
+    for (int i = 1; i <= musicToPrecache; i++) {
+      int nextIndex = (currentInMusick + i) % musickList.length;
+      await player.setSource(musickList[nextIndex]['linkMusick']);
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -528,35 +529,35 @@ Future<void> indexBuforMusic() async {
                                       alignment: Alignment.center,
                                       children: [
                                         ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                          child:
-                                          // (musicOrImagesOrQuote != "Quote") ?
-                                          CachedNetworkImage(
-                                            imageUrl: musicOrImagesOrQuote == "Music"
-                                                ? 'https://i.imgur.com/9IAD2q9.jpeg'
-                                                : gameImages[index]['link']
-                                                    as String,
-                                            fit: BoxFit.cover,
-                                            errorWidget:
-                                                (context, url, error) =>
-                                                    const Icon(Icons.error),
-                                          )
-                                          // :  
-                                          // Positioned.fill(
-                                          //     child: Align(
-                                          //       alignment: Alignment.center,
-                                          //       child: SingleChildScrollView(
-                                          //         child: Padding(
-                                          //           padding: const EdgeInsets.all(8.0),
-                                          //           child: Text(
-                                          //             " textddddst text $musicOrImagesOrQuote",
-                                          //             textAlign: TextAlign.center,
-                                          //           ),
-                                          //         ),
-                                          //       ),)),                                
-                                        ), 
-                                
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                            child:
+                                                // (musicOrImagesOrQuote != "Quote") ?
+                                                CachedNetworkImage(
+                                              imageUrl: musicOrImagesOrQuote ==
+                                                      "Music"
+                                                  ? 'https://i.imgur.com/9IAD2q9.jpeg'
+                                                  : gameImages[index]['link']
+                                                      as String,
+                                              fit: BoxFit.cover,
+                                              errorWidget:
+                                                  (context, url, error) =>
+                                                      const Icon(Icons.error),
+                                            )
+                                            // :
+                                            // Positioned.fill(
+                                            //     child: Align(
+                                            //       alignment: Alignment.center,
+                                            //       child: SingleChildScrollView(
+                                            //         child: Padding(
+                                            //           padding: const EdgeInsets.all(8.0),
+                                            //           child: Text(
+                                            //             " textddddst text $musicOrImagesOrQuote",
+                                            //             textAlign: TextAlign.center,
+                                            //           ),
+                                            //         ),
+                                            //       ),)),
+                                            ),
                                         if (musicOrImagesOrQuote == "Music")
                                           ElevatedButton(
                                             onPressed: () async {
@@ -591,13 +592,10 @@ Future<void> indexBuforMusic() async {
                                         else
                                           Container(),
                                         if (musicOrImagesOrQuote == "Music")
-                                          Padding(
-                                              padding: const EdgeInsets.only(
-                                                top: 300,
-                                                bottom: 20,
-                                                left: Sizes.p16,
-                                                right: Sizes.p16,
-                                              ),
+                                          Positioned(
+                                            left:Sizes.p16,
+                                            right:Sizes.p16,
+                                            bottom: 10,
                                               child: Container(
                                                   decoration: BoxDecoration(
                                                     color: Colors.grey[900]
@@ -608,8 +606,8 @@ Future<void> indexBuforMusic() async {
                                                   ),
                                                   padding:
                                                       const EdgeInsets.only(
-                                                    top: 20,
-                                                    bottom: 20,
+                                                    top: Sizes.p12,
+                                                    bottom: Sizes.p12,
                                                     left: Sizes.p16,
                                                     right: Sizes.p16,
                                                   ),
@@ -623,7 +621,6 @@ Future<void> indexBuforMusic() async {
                                                                 .inSeconds),
                                                       );
                                                     },
-
                                                     barHeight: 10,
                                                     baseBarColor: Colors.grey,
                                                     thumbColor: Colors.blue,
@@ -668,10 +665,10 @@ Future<void> indexBuforMusic() async {
                                 }
                               },
                               style: ElevatedButton.styleFrom(
-                              side: BorderSide(
-                              color: Colors.white, 
-                              width: 2, 
-                            ),
+                                side: BorderSide(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
                                 backgroundColor: answer == CurrentAnswer.ai
                                     ? (gameImages[currentIndex]['category'] ==
                                                 'ai' ||
@@ -680,7 +677,7 @@ Future<void> indexBuforMusic() async {
                                                 'ai')
                                         ? const Color.fromARGB(255, 41, 95, 43)
                                         : const Color.fromARGB(255, 129, 42, 42)
-                                    :  Colors.transparent,
+                                    : Colors.transparent,
                               ),
                               child: Text(
                                 'AI',
@@ -711,10 +708,10 @@ Future<void> indexBuforMusic() async {
                                 }
                               },
                               style: ElevatedButton.styleFrom(
-                              side: BorderSide(
-                              color: Colors.white, 
-                              width: 2, 
-                            ),
+                                side: BorderSide(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
                                 backgroundColor: answer == CurrentAnswer.human
                                     ? (gameImages[currentIndex]['category'] ==
                                                 'human' ||
@@ -723,7 +720,7 @@ Future<void> indexBuforMusic() async {
                                                 'human')
                                         ? const Color.fromARGB(255, 41, 95, 43)
                                         : const Color.fromARGB(255, 129, 42, 42)
-                                    :  Colors.transparent,
+                                    : Colors.transparent,
                               ),
                               child: Text(
                                 'Human',
