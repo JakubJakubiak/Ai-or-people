@@ -315,17 +315,6 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-  // void setupImages(Map<String, dynamic> jsonData) {
-  //   final imagesList = jsonData['humanOrAi'] as List<dynamic>;
-  //   final mapped = imagesList.cast<Map<String, dynamic>>().map((e) {
-  //     return {'link': e['link'], 'category': e['op'], 'typ': 'images'};
-  //   }).toList()
-  //     ..shuffle();
-
-  //   // gameImages = mapped;
-
-  //   allListItems.addAll(mapped);
-  // }
 
   void statusPlayer() {
     player.onPositionChanged.listen((Duration position) {
@@ -339,16 +328,31 @@ class _GameScreenState extends State<GameScreen>
         this.duration = duration;
       });
     });
-  }
-
-  void setupAllListItems(Map<String, dynamic> jsonDataImages,
+  }         
+              
+  void setupAllListItems(
+   Map<String, dynamic> jsonDataImages,
   List<dynamic> jsonDataMusickHuman,
-  Map<String, dynamic> jsonDataMusickAi) {
+  Map<String, dynamic> jsonDataMusickAi,
+  List<dynamic> jsonDataquotesHuman, 
+  List<dynamic> jsonDataquotesAi 
+  ) {
     
     final imagesList = jsonDataImages['humanOrAi'] as List<dynamic>;
     final randomImages = imagesList.cast<Map<String, dynamic>>().map((e) {
       return {'link': e['link'], 'category': e['op'], 'typ': 'images'};
     }).toList();
+
+    final randomdataquotesHuman = jsonDataquotesHuman.map<Map<String, dynamic>>((e) {
+    return {'quote': e['quote'], 'category': e['op'], 'typ': 'quotes'};
+  }).toList();
+
+
+    final randomdataquotesAi = jsonDataquotesAi.map<Map<String, dynamic>>((e) {
+    return {'quote': e['quote'], 'category': e['op'], 'typ': 'quotes'}; 
+  }).toList();
+
+
 
     final randomMusickHuman = jsonDataMusickHuman.map<Map<String, dynamic>>((e) {
       return {
@@ -359,7 +363,7 @@ class _GameScreenState extends State<GameScreen>
         'imageCover': e['cover'],
         'typ': 'musick'
       };
-    }).toList();
+    }).toList()..shuffle();
 
     final randomMusickAi =
         (jsonDataMusickAi['playlists'] as List<dynamic>).expand((playlist) {
@@ -373,9 +377,14 @@ class _GameScreenState extends State<GameScreen>
           'typ': 'musick'
         };
       });
-    }).toList();
+    }).toList()..shuffle();
 
-    final loakalList = (randomImages + randomMusickHuman + randomMusickAi)..shuffle(Random());
+    final loakalList = (randomImages 
+    + randomMusickHuman 
+    + randomMusickAi 
+    + randomdataquotesHuman 
+    + randomdataquotesAi
+    )..shuffle(Random());
     allListItems.addAll(loakalList);
   }
 
@@ -384,10 +393,11 @@ class _GameScreenState extends State<GameScreen>
     int imagesToPrecache = 5;
     for (int i = 1; i <= imagesToPrecache; i++) {
       int nextIndex = (currentIn + i) % allListItems.length;
-      await precacheImage(
-        CachedNetworkImageProvider(allListItems[currentIndex]['link']),
-        context,
-      );
+      if(allListItems[currentIn]['typ'] == "images")
+        await precacheImage(
+          CachedNetworkImageProvider(allListItems[currentIndex]['link']),
+          context,
+        );
     }
   }
 
@@ -396,7 +406,8 @@ class _GameScreenState extends State<GameScreen>
     int musicToPrecache = 5;
     for (int i = 1; i <= musicToPrecache; i++) {
       int nextIndex = (currentInMusick + i) % allListItems.length;
-      await player.setSource(allListItems[currentIndex]['link']);
+      if(allListItems[currentIndex]['typ'] == "musick")
+        await player.setSource(allListItems[currentInMusick]['link']);
     }
   }
 
@@ -430,20 +441,26 @@ class _GameScreenState extends State<GameScreen>
             if (requestState is RequestLoadSuccess) {
               final jsonData = requestState.data;
 
+              final jsonDataHumanOrAi =
+                  jsonData['humnOrAi'] as Map<String, dynamic>;
               final jsonDatatinyncsmusic =
                   jsonData['tinyncsmusic'] as List<dynamic>;
               final jsonDatatinyncsmusicAi =
                   jsonData['musicAi'] as Map<String, dynamic>;
-              final jsonDataHumanOrAi =
-                  jsonData['humnOrAi'] as Map<String, dynamic>;
-
-              // if (gameImages.isEmpty) setupImages(jsonDataHumanOrAi);
-              // if (musickList.isEmpty) {
-              //   setupMusick(jsonDatatinyncsmusic, jsonDatatinyncsmusicAi);
-              // }
+              final jsonDataquotesHuman =
+                  jsonData['quotesHuman'] as List<dynamic>;
+              final jsonDataquotesAi =
+                  jsonData['quotesAi'] as List<dynamic>;
+              
 
               if (allListItems.isEmpty) {
-                setupAllListItems(jsonDataHumanOrAi, jsonDatatinyncsmusic, jsonDatatinyncsmusicAi);
+                setupAllListItems(
+                jsonDataHumanOrAi,
+                jsonDatatinyncsmusic,
+                jsonDatatinyncsmusicAi,
+                jsonDataquotesHuman,
+                jsonDataquotesAi
+                );
               };
 
               
@@ -535,7 +552,7 @@ class _GameScreenState extends State<GameScreen>
                                             borderRadius:
                                                 BorderRadius.circular(20),
                                             child:
-                                                // (allListItems[currentIndex]['typ'] !='Quote') ?
+                                                (allListItems[currentIndex]['typ'] !='quotes') ?
                                                 CachedNetworkImage(
                                               imageUrl: (allListItems[index]['typ'] =='musick')
                                                   ? 'https://i.imgur.com/9IAD2q9.jpeg'
@@ -545,20 +562,18 @@ class _GameScreenState extends State<GameScreen>
                                               errorWidget:
                                                   (context, url, error) =>
                                                       const Icon(Icons.error),
-                                            )
-                                            // :
-                                            // Positioned.fill(
-                                            //     child: Align(
-                                            //       alignment: Alignment.center,
-                                            //       child: SingleChildScrollView(
-                                            //         child: Padding(
-                                            //           padding: const EdgeInsets.all(8.0),
-                                            //           child: Text(
-                                            //             " textddddst text $musicOrImagesOrQuote",
-                                            //             textAlign: TextAlign.center,
-                                            //           ),
-                                            //         ),
-                                            //       ),)),
+                                            ):Positioned.fill(
+                                                child: Align(
+                                                  alignment: Alignment.center,
+                                                  child: SingleChildScrollView(
+                                                    child: Padding(
+                                                      padding: const EdgeInsets.all(8.0),
+                                                      child: Text(
+                                                        allListItems[currentIndex]['quote'],
+                                                        textAlign: TextAlign.center,
+                                                      ),
+                                                    ),
+                                                  ),)),
                                             ),
                                         if (allListItems[index]['typ'] =='musick')
                                           ElevatedButton(
