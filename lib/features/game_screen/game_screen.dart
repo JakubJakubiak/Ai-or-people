@@ -329,7 +329,7 @@ class _GameScreenState extends State<GameScreen>
   }         
               
   void setupAllListItems(
-   Map<String, dynamic> jsonDataImages,
+  Map<String, dynamic> jsonDataImages,
   List<dynamic> jsonDataMusickHuman,
   Map<String, dynamic> jsonDataMusickAi,
   List<dynamic> jsonDataquotesHuman, 
@@ -391,11 +391,12 @@ class _GameScreenState extends State<GameScreen>
     int imagesToPrecache = 10;
     for (int i = 1; i <= imagesToPrecache; i++) {
       int nextIndex = (currentIn + i) % allListItems.length;
-      if(allListItems[currentIn]['typ'] == "images")
+      if(allListItems[currentIndex]['typ'] == "images"){
         await precacheImage(
           CachedNetworkImageProvider(allListItems[currentIndex]['link']),
           context,
         );
+      }
     }
   }
 
@@ -550,17 +551,20 @@ class _GameScreenState extends State<GameScreen>
                                             borderRadius:
                                                 BorderRadius.circular(20),
                                             child:
-                                                (allListItems[currentIndex]['typ'] !='quotes') ?
-                                                CachedNetworkImage(
-                                              imageUrl: (allListItems[index]['typ'] =='musick')
-                                                  ? 'https://i.imgur.com/9IAD2q9.jpeg'
-                                                  : allListItems[index]['link']
-                                                      as String,
-                                              fit: BoxFit.cover,
-                                              errorWidget:
-                                                  (context, url, error) =>
-                                                      const Icon(Icons.error),
-                                            ):Positioned.fill(
+                                                (allListItems[index]['typ'] !='quotes') ?
+                                      (allListItems[index]['typ'] == 'musick')
+                                        ? Image.asset(
+                                            'lib/logoIcon/headphones.jpg', 
+                                            fit: BoxFit.cover,
+                                          )
+                                        : CachedNetworkImage(
+                                            imageUrl: allListItems[index]['link'] as String,
+                                            fit: BoxFit.cover,
+                                            placeholder: (context, url) => Center(
+                                              child: CircularProgressIndicator(), 
+                                            ),
+                                            errorWidget: (context, url, error) => const Icon(Icons.error),
+                                          ):Positioned.fill(
                                                 child: Align(
                                                   alignment: Alignment.center,
                                                   child: SingleChildScrollView(

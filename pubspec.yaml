@@ -38,6 +38,7 @@ flutter:
 
   assets:
     - lib/logoIcon/icon.png
+    - lib/logoIcon/headphones.jpg
 
 flutter_icons:
   android: "launcher_icon"
