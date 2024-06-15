@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Human or AI?</string>
+	<string>Human or AI</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -38,7 +38,7 @@
 	<key>FacebookClientToken</key>
 	<string>c5fffd680c490b9b6b88f748750d0834</string>
 	<key>FacebookDisplayName</key>
-	<string>Human or AI?</string>
+	<string>Human or AI</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-5915784054696948~4365804508</string>
 	<key>LSRequiresIPhoneOS</key>

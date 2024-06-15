@@ -47,9 +47,7 @@ class _GameScreenState extends State<GameScreen>
   final player = AudioPlayer();
 
   bool isPlaying = false;
-
   BannerAd? _banner;
-
 
   List<Map<String, dynamic>> allListItems = [];
 
@@ -390,7 +388,7 @@ class _GameScreenState extends State<GameScreen>
 
   Future<void> indexBuforImages() async {
     int currentIn = this.currentIndex;
-    int imagesToPrecache = 5;
+    int imagesToPrecache = 10;
     for (int i = 1; i <= imagesToPrecache; i++) {
       int nextIndex = (currentIn + i) % allListItems.length;
       if(allListItems[currentIn]['typ'] == "images")
@@ -403,7 +401,7 @@ class _GameScreenState extends State<GameScreen>
 
   Future<void> indexBuforMusic() async {
     int currentInMusick = this.currentIndex;
-    int musicToPrecache = 5;
+    int musicToPrecache = 8;
     for (int i = 1; i <= musicToPrecache; i++) {
       int nextIndex = (currentInMusick + i) % allListItems.length;
       if(allListItems[currentIndex]['typ'] == "musick")
