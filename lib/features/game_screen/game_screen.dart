@@ -51,8 +51,6 @@ class _GameScreenState extends State<GameScreen>
 
   List<Map<String, dynamic>> allListItems = [];
 
-
-
   Animation<double>? animation;
   dynamic sizeW;
   dynamic sizeH;
@@ -112,7 +110,6 @@ class _GameScreenState extends State<GameScreen>
     }
 
     Future<void> showNextImage() async {
-
       await _pageController.animateToPage(
         _pageController.page!.toInt() + 1,
         duration: const Duration(milliseconds: 350),
@@ -313,7 +310,6 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
-
   void statusPlayer() {
     player.onPositionChanged.listen((Duration position) {
       setState(() {
@@ -326,33 +322,30 @@ class _GameScreenState extends State<GameScreen>
         this.duration = duration;
       });
     });
-  }         
-              
+  }
+
   void setupAllListItems(
-  Map<String, dynamic> jsonDataImages,
-  List<dynamic> jsonDataMusickHuman,
-  Map<String, dynamic> jsonDataMusickAi,
-  List<dynamic> jsonDataquotesHuman, 
-  List<dynamic> jsonDataquotesAi 
-  ) {
-    
+      Map<String, dynamic> jsonDataImages,
+      List<dynamic> jsonDataMusickHuman,
+      Map<String, dynamic> jsonDataMusickAi,
+      List<dynamic> jsonDataquotesHuman,
+      List<dynamic> jsonDataquotesAi) {
     final imagesList = jsonDataImages['humanOrAi'] as List<dynamic>;
     final randomImages = imagesList.cast<Map<String, dynamic>>().map((e) {
       return {'link': e['link'], 'category': e['op'], 'typ': 'images'};
     }).toList();
 
-    final randomdataquotesHuman = jsonDataquotesHuman.map<Map<String, dynamic>>((e) {
-    return {'quote': e['quote'], 'category': e['op'], 'typ': 'quotes'};
-  }).toList();
-
+    final randomdataquotesHuman =
+        jsonDataquotesHuman.map<Map<String, dynamic>>((e) {
+      return {'quote': e['quote'], 'category': e['op'], 'typ': 'quotes'};
+    }).toList();
 
     final randomdataquotesAi = jsonDataquotesAi.map<Map<String, dynamic>>((e) {
-    return {'quote': e['quote'], 'category': e['op'], 'typ': 'quotes'}; 
-  }).toList();
+      return {'quote': e['quote'], 'category': e['op'], 'typ': 'quotes'};
+    }).toList();
 
-
-
-    final randomMusickHuman = jsonDataMusickHuman.map<Map<String, dynamic>>((e) {
+    final randomMusickHuman =
+        jsonDataMusickHuman.map<Map<String, dynamic>>((e) {
       return {
         'link': e['url'],
         'category': 'human',
@@ -361,7 +354,8 @@ class _GameScreenState extends State<GameScreen>
         'imageCover': e['cover'],
         'typ': 'musick'
       };
-    }).toList()..shuffle();
+    }).toList()
+          ..shuffle();
 
     final randomMusickAi =
         (jsonDataMusickAi['playlists'] as List<dynamic>).expand((playlist) {
@@ -375,14 +369,15 @@ class _GameScreenState extends State<GameScreen>
           'typ': 'musick'
         };
       });
-    }).toList()..shuffle();
+    }).toList()
+          ..shuffle();
 
-    final loakalList = (randomImages 
-    + randomMusickHuman 
-    + randomMusickAi 
-    + randomdataquotesHuman 
-    + randomdataquotesAi
-    )..shuffle(Random());
+    final loakalList = (randomImages +
+        randomMusickHuman +
+        randomMusickAi +
+        randomdataquotesHuman +
+        randomdataquotesAi)
+      ..shuffle(Random());
     allListItems.addAll(loakalList);
   }
 
@@ -391,9 +386,10 @@ class _GameScreenState extends State<GameScreen>
     int imagesToPrecache = 10;
     for (int i = 1; i <= imagesToPrecache; i++) {
       int nextIndex = (currentIn + i) % allListItems.length;
-      if(allListItems[currentIndex]['typ'] == "images"){
+      if (allListItems[currentIndex]['typ'] == "images") {
+        String imageUrl = allListItems[nextIndex]['link'] as String;
         await precacheImage(
-          CachedNetworkImageProvider(allListItems[currentIndex]['link']),
+          CachedNetworkImageProvider(imageUrl),
           context,
         );
       }
@@ -405,8 +401,14 @@ class _GameScreenState extends State<GameScreen>
     int musicToPrecache = 8;
     for (int i = 1; i <= musicToPrecache; i++) {
       int nextIndex = (currentInMusick + i) % allListItems.length;
-      if(allListItems[currentIndex]['typ'] == "musick")
-        await player.setSource(allListItems[currentInMusick]['link']);
+      if (allListItems[nextIndex]['typ'] == "musick") {
+        var musicLink = allListItems[nextIndex]['link'];
+        if (musicLink is Source) {
+          await player.setSource(musicLink);
+        } else {
+          print('Invalid music link type for index $nextIndex');
+        }
+      }
     }
   }
 
@@ -448,21 +450,17 @@ class _GameScreenState extends State<GameScreen>
                   jsonData['musicAi'] as Map<String, dynamic>;
               final jsonDataquotesHuman =
                   jsonData['quotesHuman'] as List<dynamic>;
-              final jsonDataquotesAi =
-                  jsonData['quotesAi'] as List<dynamic>;
-              
+              final jsonDataquotesAi = jsonData['quotesAi'] as List<dynamic>;
 
               if (allListItems.isEmpty) {
                 setupAllListItems(
-                jsonDataHumanOrAi,
-                jsonDatatinyncsmusic,
-                jsonDatatinyncsmusicAi,
-                jsonDataquotesHuman,
-                jsonDataquotesAi
-                );
-              };
-
-              
+                    jsonDataHumanOrAi,
+                    jsonDatatinyncsmusic,
+                    jsonDatatinyncsmusicAi,
+                    jsonDataquotesHuman,
+                    jsonDataquotesAi);
+              }
+              ;
             }
 
             if (requestState is RequestLoadFailure) {
@@ -532,7 +530,7 @@ class _GameScreenState extends State<GameScreen>
                               ),
                               child: PageView.builder(
                                 physics: const NeverScrollableScrollPhysics(),
-                                itemCount:allListItems.length,                             
+                                itemCount: allListItems.length,
                                 controller: _pageController,
                                 itemBuilder: (
                                   context,
@@ -548,36 +546,57 @@ class _GameScreenState extends State<GameScreen>
                                       alignment: Alignment.center,
                                       children: [
                                         ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                            child:
-                                                (allListItems[index]['typ'] !='quotes') ?
-                                      (allListItems[index]['typ'] == 'musick')
-                                        ? Image.asset(
-                                            'lib/logoIcon/headphones.jpg', 
-                                            fit: BoxFit.cover,
-                                          )
-                                        : CachedNetworkImage(
-                                            imageUrl: allListItems[index]['link'] as String,
-                                            fit: BoxFit.cover,
-                                            placeholder: (context, url) => Center(
-                                              child: CircularProgressIndicator(), 
-                                            ),
-                                            errorWidget: (context, url, error) => const Icon(Icons.error),
-                                          ):Positioned.fill(
-                                                child: Align(
-                                                  alignment: Alignment.center,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          child: Builder(
+                                            builder: (context) {
+                                              final item = allListItems[index];
+                                              final itemType = item['typ'];
+                                              final itemLink =
+                                                  item['link'] as String?;
+                                              final itemQuote =
+                                                  item['quote'] as String?;
+
+                                              if (itemType == 'musick') {
+                                                return Image.asset(
+                                                  'lib/logoIcon/headphones.jpg',
+                                                  fit: BoxFit.cover,
+                                                );
+                                              } else if (itemType == 'quotes') {
+                                                return Center(
                                                   child: SingleChildScrollView(
                                                     child: Padding(
-                                                      padding: const EdgeInsets.all(8.0),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              8.0),
                                                       child: Text(
-                                                        allListItems[currentIndex]['quote'],
-                                                        textAlign: TextAlign.center,
+                                                        itemQuote ??
+                                                            'Invalid quote',
+                                                        textAlign:
+                                                            TextAlign.center,
                                                       ),
                                                     ),
-                                                  ),)),
-                                            ),
-                                        if (allListItems[index]['typ'] =='musick')
+                                                  ),
+                                                );
+                                              } else {
+                                                return CachedNetworkImage(
+                                                  imageUrl: itemLink ?? '',
+                                                  fit: BoxFit.cover,
+                                                  placeholder: (context, url) =>
+                                                      const Center(
+                                                    child:
+                                                        CircularProgressIndicator(),
+                                                  ),
+                                                  errorWidget: (context, url,
+                                                          error) =>
+                                                      const Icon(Icons.error),
+                                                );
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                        if (allListItems[index]['typ'] ==
+                                            'musick')
                                           ElevatedButton(
                                             onPressed: () async {
                                               if (isPlaying) {
@@ -585,8 +604,9 @@ class _GameScreenState extends State<GameScreen>
                                               } else {
                                                 await player.play(
                                                   UrlSource(
-                                                    allListItems.isNotEmpty 
-                                                        ? allListItems[index]['link'] as String
+                                                    allListItems.isNotEmpty
+                                                        ? allListItems[index]
+                                                            ['link'] as String
                                                         : '',
                                                   ),
                                                 );
@@ -604,11 +624,12 @@ class _GameScreenState extends State<GameScreen>
                                           )
                                         else
                                           Container(),
-                                        if (allListItems[index]['typ'] =='musick')
+                                        if (allListItems[index]['typ'] ==
+                                            'musick')
                                           Positioned(
-                                            left:Sizes.p16,
-                                            right:Sizes.p16,
-                                            bottom: 10,
+                                              left: Sizes.p16,
+                                              right: Sizes.p16,
+                                              bottom: 10,
                                               child: Container(
                                                   decoration: BoxDecoration(
                                                     color: Colors.grey[900]
@@ -684,7 +705,7 @@ class _GameScreenState extends State<GameScreen>
                                 ),
                                 backgroundColor: answer == CurrentAnswer.ai
                                     ? (allListItems[currentIndex]['category'] ==
-                                                'ai' )
+                                            'ai')
                                         ? const Color.fromARGB(255, 41, 95, 43)
                                         : const Color.fromARGB(255, 129, 42, 42)
                                     : Colors.transparent,
@@ -724,7 +745,7 @@ class _GameScreenState extends State<GameScreen>
                                 ),
                                 backgroundColor: answer == CurrentAnswer.human
                                     ? (allListItems[currentIndex]['category'] ==
-                                                'human')
+                                            'human')
                                         ? const Color.fromARGB(255, 41, 95, 43)
                                         : const Color.fromARGB(255, 129, 42, 42)
                                     : Colors.transparent,
