@@ -11,6 +11,7 @@ import 'package:games_services/games_services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:humanai/features/game_screen/widgets/game_over_dialog.dart';
 import 'package:humanai/features/game_screen/widgets/healh_display.dart';
+import 'package:humanai/features/game_screen/widgets/setings_menu.dart';
 import 'package:humanai/modules/admob_service.dart';
 import 'package:humanai/utils/constants.dart';
 import 'package:humanai/utils/gaps.dart';
@@ -34,8 +35,7 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen>
-    with SingleTickerProviderStateMixin {
+class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateMixin {
   final stateManager = HomePageManager();
   CurrentAnswer answer = CurrentAnswer.none;
 
@@ -261,6 +261,21 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 
+  Future<Future<Widget?>> _setingsMenu() async {
+    print('//////settings');
+    return showDialog<Widget>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: SettingsMenu(
+          score: score,
+          onThemeChanged: (ThemeMode) {},
+        ),
+      ),
+    );
+  }
+
   Future<void> _loadIntersitialAd() async {
     if (!Constants.adsEnabled) return;
     await InterstitialAd.load(
@@ -325,18 +340,13 @@ class _GameScreenState extends State<GameScreen>
   }
 
   void setupAllListItems(
-      Map<String, dynamic> jsonDataImages,
-      List<dynamic> jsonDataMusickHuman,
-      Map<String, dynamic> jsonDataMusickAi,
-      List<dynamic> jsonDataquotesHuman,
-      List<dynamic> jsonDataquotesAi) {
+      Map<String, dynamic> jsonDataImages, List<dynamic> jsonDataMusickHuman, Map<String, dynamic> jsonDataMusickAi, List<dynamic> jsonDataquotesHuman, List<dynamic> jsonDataquotesAi) {
     final imagesList = jsonDataImages['humanOrAi'] as List<dynamic>;
     final randomImages = imagesList.cast<Map<String, dynamic>>().map((e) {
       return {'link': e['link'], 'category': e['op'], 'typ': 'images'};
     }).toList();
 
-    final randomdataquotesHuman =
-        jsonDataquotesHuman.map<Map<String, dynamic>>((e) {
+    final randomdataquotesHuman = jsonDataquotesHuman.map<Map<String, dynamic>>((e) {
       return {'quote': e['quote'], 'category': e['op'], 'typ': 'quotes'};
     }).toList();
 
@@ -344,40 +354,20 @@ class _GameScreenState extends State<GameScreen>
       return {'quote': e['quote'], 'category': e['op'], 'typ': 'quotes'};
     }).toList();
 
-    final randomMusickHuman =
-        jsonDataMusickHuman.map<Map<String, dynamic>>((e) {
-      return {
-        'link': e['url'],
-        'category': 'human',
-        'track': e['track'],
-        'artistraw': e['artistraw'],
-        'imageCover': e['cover'],
-        'typ': 'musick'
-      };
+    final randomMusickHuman = jsonDataMusickHuman.map<Map<String, dynamic>>((e) {
+      return {'link': e['url'], 'category': 'human', 'track': e['track'], 'artistraw': e['artistraw'], 'imageCover': e['cover'], 'typ': 'musick'};
     }).toList()
-          ..shuffle();
+      ..shuffle();
 
-    final randomMusickAi =
-        (jsonDataMusickAi['playlists'] as List<dynamic>).expand((playlist) {
-      return (playlist['playlist_clips'] as List<dynamic>)
-          .map<Map<String, dynamic>>((clipData) {
+    final randomMusickAi = (jsonDataMusickAi['playlists'] as List<dynamic>).expand((playlist) {
+      return (playlist['playlist_clips'] as List<dynamic>).map<Map<String, dynamic>>((clipData) {
         final clip = clipData['clip'];
-        return {
-          'link': clip['audio_url'],
-          'imageCover': clip['image_url'],
-          'category': 'ai',
-          'typ': 'musick'
-        };
+        return {'link': clip['audio_url'], 'imageCover': clip['image_url'], 'category': 'ai', 'typ': 'musick'};
       });
     }).toList()
-          ..shuffle();
+      ..shuffle();
 
-    final loakalList = (randomImages +
-        randomMusickHuman +
-        randomMusickAi +
-        randomdataquotesHuman +
-        randomdataquotesAi)
-      ..shuffle(Random());
+    final loakalList = (randomImages + randomMusickHuman + randomMusickAi + randomdataquotesHuman + randomdataquotesAi)..shuffle(Random());
     allListItems.addAll(loakalList);
   }
 
@@ -428,6 +418,13 @@ class _GameScreenState extends State<GameScreen>
             },
             icon: const Icon(Icons.leaderboard),
           ),
+          IconButton(
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              _setingsMenu();
+            },
+            icon: const Icon(Icons.settings),
+          ),
           gapW8,
         ],
       ),
@@ -442,54 +439,43 @@ class _GameScreenState extends State<GameScreen>
             if (requestState is RequestLoadSuccess) {
               final jsonData = requestState.data;
 
-              final jsonDataHumanOrAi =
-                  jsonData['humnOrAi'] as Map<String, dynamic>;
-              final jsonDatatinyncsmusic =
-                  jsonData['tinyncsmusic'] as List<dynamic>;
-              final jsonDatatinyncsmusicAi =
-                  jsonData['musicAi'] as Map<String, dynamic>;
-              final jsonDataquotesHuman =
-                  jsonData['quotesHuman'] as List<dynamic>;
+              final jsonDataHumanOrAi = jsonData['humnOrAi'] as Map<String, dynamic>;
+              final jsonDatatinyncsmusic = jsonData['tinyncsmusic'] as List<dynamic>;
+              final jsonDatatinyncsmusicAi = jsonData['musicAi'] as Map<String, dynamic>;
+              final jsonDataquotesHuman = jsonData['quotesHuman'] as List<dynamic>;
               final jsonDataquotesAi = jsonData['quotesAi'] as List<dynamic>;
 
               if (allListItems.isEmpty) {
-                setupAllListItems(
-                    jsonDataHumanOrAi,
-                    jsonDatatinyncsmusic,
-                    jsonDatatinyncsmusicAi,
-                    jsonDataquotesHuman,
-                    jsonDataquotesAi);
+                setupAllListItems(jsonDataHumanOrAi, jsonDatatinyncsmusic, jsonDatatinyncsmusicAi, jsonDataquotesHuman, jsonDataquotesAi);
               }
               ;
             }
 
             if (requestState is RequestLoadFailure) {
               return Center(
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Error loading images',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      gapH16,
-                      const Text(
-                        'Please check your internet connection',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      gapH24,
-                      FilledButton.icon(
-                        onPressed: stateManager.makeGetRequest,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
-                      )
-                    ]),
+                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Text(
+                    'Error loading images',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  gapH16,
+                  const Text(
+                    'Please check your internet connection',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  gapH24,
+                  FilledButton.icon(
+                    onPressed: stateManager.makeGetRequest,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  )
+                ]),
               );
             }
 
@@ -525,8 +511,7 @@ class _GameScreenState extends State<GameScreen>
                           child: Center(
                             child: ConstrainedBox(
                               constraints: BoxConstraints(
-                                maxHeight: MediaQuery.of(context).size.width -
-                                    Sizes.p32,
+                                maxHeight: MediaQuery.of(context).size.width - Sizes.p32,
                               ),
                               child: PageView.builder(
                                 physics: const NeverScrollableScrollPhysics(),
@@ -546,16 +531,13 @@ class _GameScreenState extends State<GameScreen>
                                       alignment: Alignment.center,
                                       children: [
                                         ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(20),
+                                          borderRadius: BorderRadius.circular(20),
                                           child: Builder(
                                             builder: (context) {
                                               final item = allListItems[index];
                                               final itemType = item['typ'];
-                                              final itemLink =
-                                                  item['link'] as String?;
-                                              final itemQuote =
-                                                  item['quote'] as String?;
+                                              final itemLink = item['link'] as String?;
+                                              final itemQuote = item['quote'] as String?;
 
                                               if (itemType == 'musick') {
                                                 return Image.asset(
@@ -566,14 +548,10 @@ class _GameScreenState extends State<GameScreen>
                                                 return Center(
                                                   child: SingleChildScrollView(
                                                     child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
+                                                      padding: const EdgeInsets.all(8.0),
                                                       child: Text(
-                                                        itemQuote ??
-                                                            'Invalid quote',
-                                                        textAlign:
-                                                            TextAlign.center,
+                                                        itemQuote ?? 'Invalid quote',
+                                                        textAlign: TextAlign.center,
                                                       ),
                                                     ),
                                                   ),
@@ -582,21 +560,16 @@ class _GameScreenState extends State<GameScreen>
                                                 return CachedNetworkImage(
                                                   imageUrl: itemLink ?? '',
                                                   fit: BoxFit.cover,
-                                                  placeholder: (context, url) =>
-                                                      const Center(
-                                                    child:
-                                                        CircularProgressIndicator(),
+                                                  placeholder: (context, url) => const Center(
+                                                    child: CircularProgressIndicator(),
                                                   ),
-                                                  errorWidget: (context, url,
-                                                          error) =>
-                                                      const Icon(Icons.error),
+                                                  errorWidget: (context, url, error) => const Icon(Icons.error),
                                                 );
                                               }
                                             },
                                           ),
                                         ),
-                                        if (allListItems[index]['typ'] ==
-                                            'musick')
+                                        if (allListItems[index]['typ'] == 'musick')
                                           ElevatedButton(
                                             onPressed: () async {
                                               if (isPlaying) {
@@ -604,10 +577,7 @@ class _GameScreenState extends State<GameScreen>
                                               } else {
                                                 await player.play(
                                                   UrlSource(
-                                                    allListItems.isNotEmpty
-                                                        ? allListItems[index]
-                                                            ['link'] as String
-                                                        : '',
+                                                    allListItems.isNotEmpty ? allListItems[index]['link'] as String : '',
                                                   ),
                                                 );
                                                 statusPlayer();
@@ -617,29 +587,22 @@ class _GameScreenState extends State<GameScreen>
                                               });
                                             },
                                             child: Icon(
-                                              isPlaying
-                                                  ? Icons.pause
-                                                  : Icons.play_arrow,
+                                              isPlaying ? Icons.pause : Icons.play_arrow,
                                             ),
                                           )
                                         else
                                           Container(),
-                                        if (allListItems[index]['typ'] ==
-                                            'musick')
+                                        if (allListItems[index]['typ'] == 'musick')
                                           Positioned(
                                               left: Sizes.p16,
                                               right: Sizes.p16,
                                               bottom: 10,
                                               child: Container(
                                                   decoration: BoxDecoration(
-                                                    color: Colors.grey[900]
-                                                        ?.withOpacity(0.8),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            10),
+                                                    color: Colors.grey[900]?.withOpacity(0.8),
+                                                    borderRadius: BorderRadius.circular(10),
                                                   ),
-                                                  padding:
-                                                      const EdgeInsets.only(
+                                                  padding: const EdgeInsets.only(
                                                     top: Sizes.p12,
                                                     bottom: Sizes.p12,
                                                     left: Sizes.p16,
@@ -650,20 +613,15 @@ class _GameScreenState extends State<GameScreen>
                                                     total: duration,
                                                     onSeek: (value) async {
                                                       await player.seek(
-                                                        Duration(
-                                                            seconds: value
-                                                                .inSeconds),
+                                                        Duration(seconds: value.inSeconds),
                                                       );
                                                     },
                                                     barHeight: 10,
                                                     baseBarColor: Colors.grey,
                                                     thumbColor: Colors.blue,
-                                                    progressBarColor:
-                                                        Colors.blue,
-                                                    bufferedBarColor:
-                                                        Colors.grey,
-                                                    timeLabelTextStyle:
-                                                        const TextStyle(
+                                                    progressBarColor: Colors.blue,
+                                                    bufferedBarColor: Colors.grey,
+                                                    timeLabelTextStyle: const TextStyle(
                                                       fontSize: 12,
                                                     ),
                                                   )))
@@ -704,8 +662,7 @@ class _GameScreenState extends State<GameScreen>
                                   width: 2,
                                 ),
                                 backgroundColor: answer == CurrentAnswer.ai
-                                    ? (allListItems[currentIndex]['category'] ==
-                                            'ai')
+                                    ? (allListItems[currentIndex]['category'] == 'ai')
                                         ? const Color.fromARGB(255, 41, 95, 43)
                                         : const Color.fromARGB(255, 129, 42, 42)
                                     : Colors.transparent,
@@ -744,8 +701,7 @@ class _GameScreenState extends State<GameScreen>
                                   width: 2,
                                 ),
                                 backgroundColor: answer == CurrentAnswer.human
-                                    ? (allListItems[currentIndex]['category'] ==
-                                            'human')
+                                    ? (allListItems[currentIndex]['category'] == 'human')
                                         ? const Color.fromARGB(255, 41, 95, 43)
                                         : const Color.fromARGB(255, 129, 42, 42)
                                     : Colors.transparent,

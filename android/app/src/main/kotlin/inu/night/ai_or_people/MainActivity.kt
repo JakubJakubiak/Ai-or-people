@@ -1,4 +1,4 @@
-package inu.night.ai_or_people
+package inu.night.humanAI
 
 import io.flutter.embedding.android.FlutterActivity
 
