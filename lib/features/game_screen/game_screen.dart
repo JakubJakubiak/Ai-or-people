@@ -52,7 +52,6 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   int currentIndex = 0;
   int limitAdmob = 0;
 
-
   Color get colorbackground => widget.colorbackground;
 
   final player = AudioPlayer();
@@ -112,8 +111,6 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
       });
     });
   }
-
-
 
   Future<void> processResponse({
     required String categoryWin,
@@ -224,7 +221,6 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     if (score > bestScore) SharedPreferencesHelper.setBestScore(score);
   }
 
-
   Future<Widget?> showGameOverDialog() {
     return showDialog<Widget>(
       context: context,
@@ -308,7 +304,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         child: SettingsMenu(
           score: score,
           onThemeChanged: (ThemeMode) {},
-          onColorChanged: (Color) {},
+          onOptionChanged: (String) {},
         ),
       ),
     );

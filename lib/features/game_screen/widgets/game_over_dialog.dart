@@ -1,3 +1,4 @@
+import 'package:animated_digit/animated_digit.dart';
 import 'package:flutter/material.dart';
 import 'package:games_services/games_services.dart';
 import 'package:humanai/utils/gaps.dart';
@@ -19,6 +20,8 @@ class GameOverDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final _controllerScore = AnimatedDigitController(score);
+    final _controllerBest = AnimatedDigitController(SharedPreferencesHelper.getBestScore());
     return AlertDialog(
       title: const Text(
         'Game Over',
@@ -42,11 +45,19 @@ class GameOverDialog extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(
-              '$score',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 28,
+            // Text(
+            //   '$score',
+            //   textAlign: TextAlign.center,
+            //   style: const TextStyle(
+            //     fontSize: 28,
+            //     fontWeight: FontWeight.bold,
+            //   ),
+            // ),
+            AnimatedDigitWidget(
+              controller: _controllerScore,
+              textStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 32,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -58,11 +69,20 @@ class GameOverDialog extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(
-              SharedPreferencesHelper.getBestScore().toString(),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 28,
+            // Text(
+            //   SharedPreferencesHelper.getBestScore().toString(),
+            //   textAlign: TextAlign.center,
+            //   style: const TextStyle(
+            //     fontSize: 28,
+            //     fontWeight: FontWeight.bold,
+            //   ),
+            // ),
+
+            AnimatedDigitWidget(
+              controller: _controllerBest,
+              textStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 32,
                 fontWeight: FontWeight.bold,
               ),
             ),
