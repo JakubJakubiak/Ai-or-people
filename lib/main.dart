@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'package:humanai/features/game_screen/game_screen.dart';
+import 'package:humanai/features/game_screen/streak_service.dart';
 import 'package:humanai/utils/shared_preferences_helper.dart';
 
 void main() async {
@@ -11,6 +12,7 @@ void main() async {
   await MobileAds.instance.initialize();
   await Firebase.initializeApp();
   await SharedPreferencesHelper.initialize();
+  await StreakService.init();
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -29,7 +31,9 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.dark,
         useMaterial3: true,
       ),
-      home: const GameScreen(),
+      home: GameScreen(
+        onColorChanged: (color) {},
+      ),
     );
   }
 }

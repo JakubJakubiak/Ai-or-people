@@ -1,121 +1,69 @@
 import 'package:flutter/material.dart';
-import 'package:games_services/games_services.dart';
-import 'package:humanai/utils/gaps.dart';
-import 'package:humanai/utils/shared_preferences_helper.dart';
+import 'package:humanai/features/game_screen/game_screen.dart';
 
 class SettingsMenu extends StatelessWidget {
+  final int score;
+  final Function(Color) onColorChanged;
+
   const SettingsMenu({
     super.key,
     required this.score,
-    required this.onThemeChanged,
+    required this.onColorChanged,
+    required Null Function(dynamic ThemeMode) onThemeChanged,
+    // required Null Function(dynamic ThemeMode) onThemeChanged,
   });
 
-  final int score;
-  final void Function(ThemeMode) onThemeChanged;
+  void _updateTheme(BuildContext context, Color color) {
+    onColorChanged(color);
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text(
-        'Settings',
-        textAlign: TextAlign.center,
+      title: const Text('Settings'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Score: $score'),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _ThemeButton(
+                color: Colors.pink,
+                onPressed: () => _updateTheme(context, Colors.pink),
+              ),
+              _ThemeButton(
+                color: Colors.blue,
+                onPressed: () => _updateTheme(context, Colors.blue),
+              ),
+              _ThemeButton(
+                color: Colors.amber,
+                onPressed: () => _updateTheme(context, Colors.amber),
+              ),
+            ],
+          ),
+        ],
       ),
-      titleTextStyle: const TextStyle(
-        fontSize: 32,
-        fontWeight: FontWeight.bold,
-      ),
-      insetPadding: EdgeInsets.zero,
-      content: FractionallySizedBox(
-        heightFactor: 0.7,
-        child: Column(
-          children: [
-            const Spacer(),
-            const Text(
-              'Score',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              '$score',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const Text(
-              'Your Best',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              SharedPreferencesHelper.getBestScore().toString(),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                gapW16,
-                Expanded(
-                  child: SizedBox(
-                    height: Sizes.p48,
-                    child: SegmentedButton<ThemeMode>(
-                      segments: const [
-                        ButtonSegment(
-                          value: ThemeMode.light,
-                          icon: Icon(Icons.light_mode),
-                        ),
-                        ButtonSegment(
-                          value: ThemeMode.dark,
-                          icon: Icon(Icons.dark_mode),
-                        ),
-                        ButtonSegment(
-                          value: ThemeMode.system,
-                          icon: Icon(Icons.brightness_auto),
-                        ),
-                      ],
-                      selected: {Theme.of(context).brightness == Brightness.light ? ThemeMode.light : ThemeMode.dark},
-                      onSelectionChanged: (Set<ThemeMode> selection) {
-                        onThemeChanged(selection.first);
-                      },
-                    ),
-                  ),
-                ),
-                gapW16,
-              ],
-            ),
-            gapH16,
-            SizedBox(
-              height: 48,
-              child: FilledButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.replay,
-                      size: 42,
-                    ),
-                    gapW16,
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    );
+  }
+}
+
+class _ThemeButton extends StatelessWidget {
+  final Color color;
+  final VoidCallback onPressed;
+
+  const _ThemeButton({
+    required this.color,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(Icons.circle, color: color, size: 40),
+      onPressed: onPressed,
     );
   }
 }
