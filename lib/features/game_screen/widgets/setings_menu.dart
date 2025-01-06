@@ -5,13 +5,11 @@ import 'package:humanai/features/game_screen/widgets/daily_raking.dart';
 class SettingsMenu extends StatefulWidget {
   final int score;
   final Function(String) onOptionChanged;
-  final Function(ThemeMode) onThemeChanged;
 
   const SettingsMenu({
     super.key,
     required this.score,
     required this.onOptionChanged,
-    required this.onThemeChanged,
   });
 
   @override
@@ -71,68 +69,67 @@ class _SettingsMenuState extends State<SettingsMenu> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 20),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _OptionButton(
-                    label: 'Text',
-                    isSelected: _selectedOptions.contains('text'),
-                    onPressed: () => _toggleOption('text'),
-                  ),
-                  _OptionButton(
-                    label: 'Music',
-                    isSelected: _selectedOptions.contains('music'),
-                    onPressed: () => _toggleOption('music'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // Second row of options
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _OptionButton(
-                    label: 'Books',
-                    isSelected: _selectedOptions.contains('books'),
-                    onPressed: () => _toggleOption('books'),
-                  ),
-                  _OptionButton(
-                    label: 'Video',
-                    isSelected: _selectedOptions.contains('video'),
-                    onPressed: () => _toggleOption('video'),
-                  ),
-                ],
-              ),
+              // Wrap(
+              //   alignment: WrapAlignment.center,
+              //   spacing: 8,
+              //   runSpacing: 8,
+              //   children: [
+              //     _OptionButton(
+              //       label: 'Text',
+              //       isSelected: _selectedOptions.contains('text'),
+              //       onPressed: () => _toggleOption('text'),
+              //     ),
+              //     _OptionButton(
+              //       label: 'Music',
+              //       isSelected: _selectedOptions.contains('music'),
+              //       onPressed: () => _toggleOption('music'),
+              //     ),
+              //   ],
+              // ),
+              // const SizedBox(height: 8),
+              // Wrap(
+              //   alignment: WrapAlignment.center,
+              //   spacing: 8,
+              //   runSpacing: 8,
+              //   children: [
+              //     _OptionButton(
+              //       label: 'Books',
+              //       isSelected: _selectedOptions.contains('books'),
+              //       onPressed: () => _toggleOption('books'),
+              //     ),
+              //     _OptionButton(
+              //       label: 'Video',
+              //       isSelected: _selectedOptions.contains('video'),
+              //       onPressed: () => _toggleOption('video'),
+              //     ),
+              //   ],
+              // ),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: _history.isNotEmpty ? _undo : null,
-                    icon: const Icon(Icons.undo),
-                    label: const Text('Undo'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _history.isNotEmpty ? Theme.of(context).primaryColor : Colors.grey,
-                    ),
-                  ),
+                  // ElevatedButton.icon(
+                  //   onPressed: _history.isNotEmpty ? _undo : null,
+                  //   icon: const Icon(Icons.undo),
+                  //   label: const Text('Undo'),
+                  //   style: ElevatedButton.styleFrom(
+                  //     backgroundColor: _history.isNotEmpty ? Theme.of(context).primaryColor : Colors.grey,
+                  //   ),
+                  // ),
                   const SizedBox(width: 20),
                   ElevatedButton(
                     onPressed: () {
                       showModalBottomSheet(
                         context: context,
                         isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
+                        // backgroundColor: Colors.transparent,
                         builder: (context) => SlidingMenuWidget(
                           consecutiveDays: StreakService.instance.getCurrentStreak(),
                           onClose: () => Navigator.pop(context),
                         ),
                       );
                     },
-                    child: const Text('Show Streak'),
+                    child: const Text('Show days'),
                   ),
                 ],
               ),

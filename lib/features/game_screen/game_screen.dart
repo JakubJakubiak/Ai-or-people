@@ -30,14 +30,14 @@ class GameScreen extends StatefulWidget {
     super.key,
     this.initialHealth = 3,
     this.limitAdmob = 20000,
-    this.colorbackground = const Color.fromARGB(0, 0, 0, 131),
-    required this.onColorChanged,
+    // this.colorbackground = const Color.fromARGB(0, 0, 0, 131),
+    // required this.onColorChanged,
   });
 
   final int initialHealth;
   final int limitAdmob;
-  final Color colorbackground;
-  final Function(Color) onColorChanged;
+  // final Color colorbackground;
+  // final Function(Color) onColorChanged;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -52,7 +52,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   int currentIndex = 0;
   int limitAdmob = 0;
 
-  Color get colorbackground => widget.colorbackground;
+  double boostX = 1;
+
+  // Color get colorbackground => widget.colorbackground;
 
   final player = AudioPlayer();
   final AnimatedDigitController _controller = AnimatedDigitController(0);
@@ -70,6 +72,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   final _pageController = PageController();
 
   RewardedAd? _rewardedAd;
+  Color _appBarColor = Colors.black;
 
   String _printDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
@@ -78,10 +81,12 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     return "$twoDigitMinutes:$twoDigitSeconds";
   }
 
-  void _incrementScore(int boostX) {
+  void _incrementScore(double boostX) {
     setState(() {
-      score++;
-      _controller.addValue(1 * boostX);
+      score = (score + 10 * boostX).toInt();
+      //// changes color in appbar don't know why
+      _controller.addValue(10 * boostX);
+      _appBarColor = Colors.black;
     });
   }
 
@@ -95,7 +100,6 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     super.initState();
     currentHealth = widget.initialHealth;
     limitAdmob = widget.limitAdmob;
-    // _backgroundColor = widget.colorbackground;
     GamesServices.signIn();
     _createBanerAd();
     stateManager.makeGetRequest();
@@ -110,6 +114,14 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         position = p;
       });
     });
+
+    final lodinDay = StreakService.instance.getCurrentStreak();
+    double comboCalculator = 1.2;
+    comboCalculator += (lodinDay ~/ 3) * 0.5;
+    comboCalculator = comboCalculator > 10.0 ? 10.0 : comboCalculator;
+    setState(() {
+      boostX = comboCalculator;
+    });
   }
 
   Future<void> processResponse({
@@ -120,7 +132,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     this.answer = answer;
 
     if (categoryWin == allListItems[currentIndex]['category']) {
-      _incrementScore(1);
+      _incrementScore(boostX);
     } else {
       _loseHealth();
     }
@@ -184,13 +196,22 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
 
   void endGame() {
     StreakService.instance.recordEntry().then((value) {
+      final lodinDay = StreakService.instance.getCurrentStreak();
+
+      double comboCalculator = 1.2;
+      comboCalculator += (lodinDay ~/ 3) * 0.5;
+      comboCalculator = comboCalculator > 10.0 ? 10.0 : comboCalculator;
+
+      setState(() {
+        boostX = comboCalculator;
+      });
+
       if (value) {
         showModalBottomSheet(
           context: context,
           isScrollControlled: true,
-          backgroundColor: Colors.transparent,
           builder: (context) => SlidingMenuWidget(
-            consecutiveDays: StreakService.instance.getCurrentStreak(),
+            consecutiveDays: lodinDay,
             onClose: () {
               Navigator.pop(context);
             },
@@ -295,7 +316,6 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   }
 
   Future<Future<Widget?>> _setingsMenu() async {
-    print('//////settings');
     return showDialog<Widget>(
       context: context,
       barrierDismissible: false,
@@ -303,7 +323,6 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         canPop: false,
         child: SettingsMenu(
           score: score,
-          onThemeChanged: (ThemeMode) {},
           onOptionChanged: (String) {},
         ),
       ),
@@ -440,7 +459,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: colorbackground,
+        // backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: _appBarColor,
         title: HealthDisplay(
           currentHealth: currentHealth,
           maxHealth: widget.initialHealth,
@@ -514,270 +534,276 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
             }
 
             return Center(
-              child: ColoredBox(
-                color: colorbackground,
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        children: <Widget>[
-                          gapH16,
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: Sizes.p16),
-                            child: Text(
-                              'Human-made or AI-generated?',
-                              maxLines: 5,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Column(
+                      children: <Widget>[
+                        gapH16,
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: Sizes.p16),
+                          child: Text(
+                            'Human-made or AI-generated?',
+                            maxLines: 5,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          gapH16,
-                          // Text(
-                          //   '$score',
-                          //   style: const TextStyle(
-                          //     fontSize: 32,
-                          //     fontWeight: FontWeight.bold,
-                          //   ),
-                          // ),
+                        ),
+                        gapH16,
+                        // Text(
+                        //   '$score',
+                        //   style: const TextStyle(
+                        //     fontSize: 32,
+                        //     fontWeight: FontWeight.bold,
+                        //   ),
+                        // ),
 
-                          AnimatedDigitWidget(
-                            controller: _controller,
-                            textStyle: const TextStyle(
-                              color: Colors.white,
+                        AnimatedDigitWidget(
+                          controller: _controller,
+                          textStyle: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          // fractionDigits: 0, // number of decimal places reserved, not rounded
+                          // enableSeparator: false,
+                        ),
+                        if (boostX > 1)
+                          Text(
+                            'Daily Boost x $boostX',
+                            style: const TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
                             ),
-                            // fractionDigits: 0, // number of decimal places reserved, not rounded
-                            // enableSeparator: false,
                           ),
-                          gapH16,
-                          Flexible(
-                            child: Center(
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxHeight: MediaQuery.of(context).size.width - Sizes.p32,
-                                ),
-                                child: PageView.builder(
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: allListItems.length,
-                                  controller: _pageController,
-                                  itemBuilder: (
-                                    context,
-                                    index,
-                                  ) {
-                                    currentIndex = index;
 
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: Sizes.p16,
-                                      ),
-                                      child: Stack(
-                                        alignment: Alignment.center,
-                                        children: [
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(20),
-                                            child: Builder(
-                                              builder: (context) {
-                                                final item = allListItems[index];
-                                                final itemType = item['typ'];
-                                                final itemLink = item['link'] as String?;
-                                                final itemQuote = item['quote'] as String?;
+                        gapH16,
+                        Flexible(
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxHeight: MediaQuery.of(context).size.width - Sizes.p32,
+                              ),
+                              child: PageView.builder(
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: allListItems.length,
+                                controller: _pageController,
+                                itemBuilder: (
+                                  context,
+                                  index,
+                                ) {
+                                  currentIndex = index;
 
-                                                if (itemType == 'musick') {
-                                                  return Image.asset(
-                                                    'lib/logoIcon/headphones.jpg',
-                                                    fit: BoxFit.cover,
-                                                  );
-                                                } else if (itemType == 'quotes') {
-                                                  return Center(
-                                                    child: SingleChildScrollView(
-                                                      child: Padding(
-                                                        padding: const EdgeInsets.all(8.0),
-                                                        child: Text(
-                                                          itemQuote ?? 'Invalid quote',
-                                                          textAlign: TextAlign.center,
-                                                        ),
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: Sizes.p16,
+                                    ),
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(20),
+                                          child: Builder(
+                                            builder: (context) {
+                                              final item = allListItems[index];
+                                              final itemType = item['typ'];
+                                              final itemLink = item['link'] as String?;
+                                              final itemQuote = item['quote'] as String?;
+
+                                              if (itemType == 'musick') {
+                                                return Image.asset(
+                                                  'lib/logoIcon/headphones.jpg',
+                                                  fit: BoxFit.cover,
+                                                );
+                                              } else if (itemType == 'quotes') {
+                                                return Center(
+                                                  child: SingleChildScrollView(
+                                                    child: Padding(
+                                                      padding: const EdgeInsets.all(8.0),
+                                                      child: Text(
+                                                        itemQuote ?? 'Invalid quote',
+                                                        textAlign: TextAlign.center,
                                                       ),
                                                     ),
-                                                  );
-                                                } else {
-                                                  return CachedNetworkImage(
-                                                    imageUrl: itemLink ?? '',
-                                                    fit: BoxFit.cover,
-                                                    placeholder: (context, url) => const Center(
-                                                      child: CircularProgressIndicator(),
-                                                    ),
-                                                    errorWidget: (context, url, error) => const Icon(Icons.error),
-                                                  );
-                                                }
-                                              },
-                                            ),
+                                                  ),
+                                                );
+                                              } else {
+                                                return CachedNetworkImage(
+                                                  imageUrl: itemLink ?? '',
+                                                  fit: BoxFit.cover,
+                                                  placeholder: (context, url) => const Center(
+                                                    child: CircularProgressIndicator(),
+                                                  ),
+                                                  errorWidget: (context, url, error) => const Icon(Icons.error),
+                                                );
+                                              }
+                                            },
                                           ),
-                                          if (allListItems[index]['typ'] == 'musick')
-                                            ElevatedButton(
-                                              onPressed: () async {
-                                                if (isPlaying) {
-                                                  await player.pause();
-                                                } else {
-                                                  await player.play(
-                                                    UrlSource(
-                                                      allListItems.isNotEmpty ? allListItems[index]['link'] as String : '',
+                                        ),
+                                        if (allListItems[index]['typ'] == 'musick')
+                                          ElevatedButton(
+                                            onPressed: () async {
+                                              if (isPlaying) {
+                                                await player.pause();
+                                              } else {
+                                                await player.play(
+                                                  UrlSource(
+                                                    allListItems.isNotEmpty ? allListItems[index]['link'] as String : '',
+                                                  ),
+                                                );
+                                                statusPlayer();
+                                              }
+                                              setState(() {
+                                                isPlaying = !isPlaying;
+                                              });
+                                            },
+                                            child: Icon(
+                                              isPlaying ? Icons.pause : Icons.play_arrow,
+                                            ),
+                                          )
+                                        else
+                                          Container(),
+                                        if (allListItems[index]['typ'] == 'musick')
+                                          Positioned(
+                                              left: Sizes.p16,
+                                              right: Sizes.p16,
+                                              bottom: 10,
+                                              child: Container(
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey[900]?.withValues(alpha: 0.8),
+                                                    borderRadius: BorderRadius.circular(10),
+                                                  ),
+                                                  padding: const EdgeInsets.only(
+                                                    top: Sizes.p12,
+                                                    bottom: Sizes.p12,
+                                                    left: Sizes.p16,
+                                                    right: Sizes.p16,
+                                                  ),
+                                                  child: ProgressBar(
+                                                    progress: position,
+                                                    total: duration,
+                                                    onSeek: (value) async {
+                                                      await player.seek(
+                                                        Duration(seconds: value.inSeconds),
+                                                      );
+                                                    },
+                                                    barHeight: 10,
+                                                    baseBarColor: Colors.grey,
+                                                    thumbColor: Colors.blue,
+                                                    progressBarColor: Colors.blue,
+                                                    bufferedBarColor: Colors.grey,
+                                                    timeLabelTextStyle: const TextStyle(
+                                                      fontSize: 12,
                                                     ),
-                                                  );
-                                                  statusPlayer();
-                                                }
-                                                setState(() {
-                                                  isPlaying = !isPlaying;
-                                                });
-                                              },
-                                              child: Icon(
-                                                isPlaying ? Icons.pause : Icons.play_arrow,
-                                              ),
-                                            )
-                                          else
-                                            Container(),
-                                          if (allListItems[index]['typ'] == 'musick')
-                                            Positioned(
-                                                left: Sizes.p16,
-                                                right: Sizes.p16,
-                                                bottom: 10,
-                                                child: Container(
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.grey[900]?.withValues(alpha: 0.8),
-                                                      borderRadius: BorderRadius.circular(10),
-                                                    ),
-                                                    padding: const EdgeInsets.only(
-                                                      top: Sizes.p12,
-                                                      bottom: Sizes.p12,
-                                                      left: Sizes.p16,
-                                                      right: Sizes.p16,
-                                                    ),
-                                                    child: ProgressBar(
-                                                      progress: position,
-                                                      total: duration,
-                                                      onSeek: (value) async {
-                                                        await player.seek(
-                                                          Duration(seconds: value.inSeconds),
-                                                        );
-                                                      },
-                                                      barHeight: 10,
-                                                      baseBarColor: Colors.grey,
-                                                      thumbColor: Colors.blue,
-                                                      progressBarColor: Colors.blue,
-                                                      bufferedBarColor: Colors.grey,
-                                                      timeLabelTextStyle: const TextStyle(
-                                                        fontSize: 12,
-                                                      ),
-                                                    )))
-                                          else
-                                            Container(),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    gapH16,
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: Sizes.p16),
-                      child: Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: SizedBox(
-                              height: 56,
-                              child: FilledButton(
-                                onPressed: () async {
-                                  HapticFeedback.mediumImpact();
-                                  if (currentHealth > 0) {
-                                    await processResponse(
-                                      categoryWin: 'ai',
-                                      answer: CurrentAnswer.ai,
-                                    );
-                                  }
+                                                  )))
+                                        else
+                                          Container(),
+                                      ],
+                                    ),
+                                  );
                                 },
-                                style: ElevatedButton.styleFrom(
-                                  side: BorderSide(
-                                    color: Colors.white,
-                                    width: 2,
-                                  ),
-                                  backgroundColor: answer == CurrentAnswer.ai
-                                      ? (allListItems[currentIndex]['category'] == 'ai')
-                                          ? const Color.fromARGB(255, 41, 95, 43)
-                                          : const Color.fromARGB(255, 129, 42, 42)
-                                      : Colors.transparent,
-                                ),
-                                child: Text(
-                                  'AI',
-                                  maxLines: 10,
-                                  softWrap: false,
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    color: Colors.grey[300],
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
                               ),
                             ),
                           ),
-                          gapW16,
-                          Expanded(
-                            child: SizedBox(
-                              height: 56,
-                              child: FilledButton(
-                                onPressed: () async {
-                                  await HapticFeedback.mediumImpact();
-                                  await player.stop();
-                                  if (currentHealth > 0) {
-                                    await processResponse(
-                                      categoryWin: 'human',
-                                      answer: CurrentAnswer.human,
-                                    );
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  side: BorderSide(
-                                    color: Colors.white,
-                                    width: 2,
-                                  ),
-                                  backgroundColor: answer == CurrentAnswer.human
-                                      ? (allListItems[currentIndex]['category'] == 'human')
-                                          ? const Color.fromARGB(255, 41, 95, 43)
-                                          : const Color.fromARGB(255, 129, 42, 42)
-                                      : Colors.transparent,
-                                ),
-                                child: Text(
-                                  'Human',
-                                  maxLines: 10,
-                                  softWrap: false,
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    color: Colors.grey[300],
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    gapH16,
-                    if (_banner != null && Constants.adsEnabled)
-                      SizedBox(
-                        height: 50,
-                        width: 320,
-                        child: AdWidget(ad: _banner!),
-                      ),
-                  ],
-                ),
+                  ),
+                  gapH16,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: Sizes.p16),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: SizedBox(
+                            height: 56,
+                            child: FilledButton(
+                              onPressed: () async {
+                                HapticFeedback.mediumImpact();
+                                if (currentHealth > 0) {
+                                  await processResponse(
+                                    categoryWin: 'ai',
+                                    answer: CurrentAnswer.ai,
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                side: BorderSide(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                                backgroundColor: answer == CurrentAnswer.ai
+                                    ? (allListItems[currentIndex]['category'] == 'ai')
+                                        ? const Color.fromARGB(255, 41, 95, 43)
+                                        : const Color.fromARGB(255, 129, 42, 42)
+                                    : Colors.transparent,
+                              ),
+                              child: Text(
+                                'AI',
+                                maxLines: 10,
+                                softWrap: false,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  color: Colors.grey[300],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        gapW16,
+                        Expanded(
+                          child: SizedBox(
+                            height: 56,
+                            child: FilledButton(
+                              onPressed: () async {
+                                await HapticFeedback.mediumImpact();
+                                await player.stop();
+                                if (currentHealth > 0) {
+                                  await processResponse(
+                                    categoryWin: 'human',
+                                    answer: CurrentAnswer.human,
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                side: BorderSide(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                                backgroundColor: answer == CurrentAnswer.human
+                                    ? (allListItems[currentIndex]['category'] == 'human')
+                                        ? const Color.fromARGB(255, 41, 95, 43)
+                                        : const Color.fromARGB(255, 129, 42, 42)
+                                    : Colors.transparent,
+                              ),
+                              child: Text(
+                                'Human',
+                                maxLines: 10,
+                                softWrap: false,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  color: Colors.grey[300],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  gapH16,
+                  if (_banner != null && Constants.adsEnabled)
+                    SizedBox(
+                      height: 50,
+                      width: 320,
+                      child: AdWidget(ad: _banner!),
+                    ),
+                ],
               ),
             );
           },

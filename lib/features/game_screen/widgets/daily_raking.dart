@@ -38,7 +38,6 @@ class _SlidingMenuWidgetState extends State<SlidingMenuWidget> with SingleTicker
 
     _controller.forward();
 
-    // Calculate scroll position to show the latest days
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         final startDay = _getStartDay();
@@ -69,17 +68,17 @@ class _SlidingMenuWidgetState extends State<SlidingMenuWidget> with SingleTicker
       margin: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: isToday
-            ? Colors.blue.shade200
+            ? Colors.blue.shade900
             : isCompleted
-                ? Colors.blue.shade100
-                : Colors.grey.shade200,
+                ? Colors.blue.shade800
+                : const Color(0xFF2C2C2C),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isToday
-              ? Colors.blue.shade500
+              ? Colors.blue.shade300
               : isCompleted
-                  ? Colors.blue
-                  : Colors.grey.shade400,
+                  ? Colors.blue.shade600
+                  : Colors.grey.shade800,
           width: isToday ? 3 : 2,
         ),
       ),
@@ -92,10 +91,10 @@ class _SlidingMenuWidgetState extends State<SlidingMenuWidget> with SingleTicker
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: isToday
-                  ? Colors.blue.shade900
+                  ? Colors.blue.shade300
                   : isCompleted
-                      ? Colors.blue.shade800
-                      : Colors.grey.shade600,
+                      ? Colors.blue.shade200
+                      : Colors.grey.shade400,
             ),
           ),
           const SizedBox(height: 8),
@@ -106,10 +105,10 @@ class _SlidingMenuWidgetState extends State<SlidingMenuWidget> with SingleTicker
                     ? Icons.check_circle
                     : Icons.radio_button_unchecked,
             color: isToday
-                ? Colors.blue.shade500
+                ? Colors.blue.shade300
                 : isCompleted
-                    ? Colors.blue
-                    : Colors.grey.shade400,
+                    ? Colors.blue.shade400
+                    : Colors.grey.shade700,
             size: 32,
           ),
         ],
@@ -126,14 +125,14 @@ class _SlidingMenuWidgetState extends State<SlidingMenuWidget> with SingleTicker
       position: _slideAnimation,
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black,
+              color: Colors.black.withOpacity(0.5),
               blurRadius: 10,
-              offset: Offset(0, -2),
+              offset: const Offset(0, -2),
             ),
           ],
         ),
