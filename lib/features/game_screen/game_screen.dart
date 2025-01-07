@@ -116,12 +116,14 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     });
 
     final lodinDay = StreakService.instance.getCurrentStreak();
-    double comboCalculator = 1.2;
-    comboCalculator += (lodinDay ~/ 3) * 0.5;
-    comboCalculator = comboCalculator > 10.0 ? 10.0 : comboCalculator;
-    setState(() {
-      boostX = comboCalculator;
-    });
+    if (lodinDay > 1) {
+      double comboCalculator = 1.2;
+      comboCalculator += (lodinDay ~/ 3) * 0.5;
+      comboCalculator = comboCalculator > 10.0 ? 10.0 : comboCalculator;
+      setState(() {
+        boostX = comboCalculator;
+      });
+    }
   }
 
   Future<void> processResponse({
