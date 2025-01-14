@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:games_services/games_services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:humanai/features/game_screen/streak_service.dart';
+import 'package:humanai/features/game_screen/widgets/FlameBoostAnimation%20.dart';
 import 'package:humanai/features/game_screen/widgets/daily_raking.dart';
 import 'package:humanai/features/game_screen/widgets/game_over_dialog.dart';
 import 'package:humanai/features/game_screen/widgets/healh_display.dart';
@@ -562,26 +563,30 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                         //     fontWeight: FontWeight.bold,
                         //   ),
                         // ),
-
-                        AnimatedDigitWidget(
-                          controller: _controller,
-                          textStyle: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          // fractionDigits: 0, // number of decimal places reserved, not rounded
-                          // enableSeparator: false,
-                        ),
-                        if (boostX > 1)
-                          Text(
-                            'Daily Boost x $boostX',
-                            style: const TextStyle(
+                        Column(children: [
+                          AnimatedDigitWidget(
+                            controller: _controller,
+                            textStyle: const TextStyle(
+                              color: Colors.white,
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
                             ),
+                            // fractionDigits: 0, // number of decimal places reserved, not rounded
+                            // enableSeparator: false,
                           ),
-
+                          if (boostX > 1)
+                            // Text(
+                            //   'Daily Boost x $boostX',
+                            //   style: const TextStyle(
+                            //     fontSize: 32,
+                            //     fontWeight: FontWeight.bold,
+                            //   ),
+                            // ),
+                            AnimatedPixelFlameCombo(
+                              comboCount: boostX,
+                              size: 80, // Adjust size as needed
+                            ),
+                        ]),
                         gapH16,
                         Flexible(
                           child: Center(
