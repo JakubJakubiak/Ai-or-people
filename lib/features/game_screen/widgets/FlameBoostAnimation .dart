@@ -47,7 +47,7 @@ class _AnimatedPixelFlameComboState extends State<AnimatedPixelFlameCombo> with 
           ),
           Column(
             children: [
-              const Text('Combo'),
+              const Text('Combo day'),
               Text(
                 '${widget.comboCount.toString()}',
                 style: TextStyle(

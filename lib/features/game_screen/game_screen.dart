@@ -119,7 +119,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     final lodinDay = StreakService.instance.getCurrentStreak();
     if (lodinDay > 1) {
       double comboCalculator = 1.2;
-      comboCalculator += (lodinDay ~/ 3) * 0.5;
+      comboCalculator += (lodinDay ~/ 2) * 0.5;
       comboCalculator = comboCalculator > 10.0 ? 10.0 : comboCalculator;
       setState(() {
         boostX = comboCalculator;
@@ -202,7 +202,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
       final lodinDay = StreakService.instance.getCurrentStreak();
 
       double comboCalculator = 1.2;
-      comboCalculator += (lodinDay ~/ 3) * 0.5;
+      comboCalculator += (lodinDay ~/ 2) * 0.5;
       comboCalculator = comboCalculator > 10.0 ? 10.0 : comboCalculator;
 
       setState(() {
@@ -556,13 +556,6 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                           ),
                         ),
                         gapH16,
-                        // Text(
-                        //   '$score',
-                        //   style: const TextStyle(
-                        //     fontSize: 32,
-                        //     fontWeight: FontWeight.bold,
-                        //   ),
-                        // ),
                         Column(children: [
                           AnimatedDigitWidget(
                             controller: _controller,
@@ -575,16 +568,14 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                             // enableSeparator: false,
                           ),
                           if (boostX > 1)
-                            // Text(
-                            //   'Daily Boost x $boostX',
-                            //   style: const TextStyle(
-                            //     fontSize: 32,
-                            //     fontWeight: FontWeight.bold,
-                            //   ),
-                            // ),
-                            AnimatedPixelFlameCombo(
-                              comboCount: boostX,
-                              size: 80, // Adjust size as needed
+                            Column(
+                              children: [
+                                gapH16,
+                                AnimatedPixelFlameCombo(
+                                  comboCount: boostX,
+                                  size: 80,
+                                ),
+                              ],
                             ),
                         ]),
                         gapH16,
