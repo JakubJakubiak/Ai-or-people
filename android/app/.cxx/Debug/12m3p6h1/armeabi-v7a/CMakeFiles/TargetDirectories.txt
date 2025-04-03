@@ -1,0 +1,2 @@
+C:/git/Flutter Project/Ai-or-people/android/app/.cxx/Debug/12m3p6h1/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/git/Flutter Project/Ai-or-people/android/app/.cxx/Debug/12m3p6h1/armeabi-v7a/CMakeFiles/rebuild_cache.dir
