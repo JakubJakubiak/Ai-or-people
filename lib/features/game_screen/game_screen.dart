@@ -538,11 +538,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     // final localList = (randomImages + randomMusickHuman + randomMusickAi + randomvideoLinksAi)
     //   ..shuffle(Random());
 
-    // --- TYMCZASOWO: Tylko wideo dla testów ---
-    print('///////////// Wideo AI przed tasowaniem: ${randomvideoLinksAi.length} ///////////////////');
-    final localList = (randomvideoLinksAi + randomMusickAi + randomImages)..shuffle(Random());
-    print('///////////// Wideo AI po tasowaniu: ${localList.length} ///////////////////');
-    // --- KONIEC TYMCZASOWO ---
+    final localList = (randomvideoLinksAi + randomMusickAi + randomMusickHuman + randomImages)..shuffle(Random());
 
     allListItems.addAll(localList);
     print("Total items loaded: ${allListItems.length}");
