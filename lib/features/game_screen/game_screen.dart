@@ -986,9 +986,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                                   final itemType = item['typ'];
                                   final itemLink = item['link'] as String?;
                                   final itemQuote = item['quote'] as String?;
-                                  final itemImageCover = item['imageCover'] as String?;
 
-                                  print('Building item $index: Type: $itemType, Link: $itemLink');
+                                  // print('Building item $index: Type: $itemType, Link: $itemLink');
 
                                   return Container(
                                     decoration: BoxDecoration(
