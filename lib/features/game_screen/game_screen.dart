@@ -743,15 +743,12 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   }
 
   Color _getHighlightColor() {
-    print('.........correctAnswerCategory..........sssss');
     if (answer == CurrentAnswer.none) {
       return Colors.transparent; // Brak podświetlenia, jeśli nie ma odpowiedzi
     }
     // Bezpieczny dostęp do kategorii, domyślnie pusty string jeśli null
     final correctAnswerCategory = allListItems[currentIndex]['category'] as String? ?? '';
     bool wasCorrect = (answer == CurrentAnswer.ai && correctAnswerCategory == 'ai') || (answer == CurrentAnswer.human && correctAnswerCategory == 'human');
-
-    print('.........correctAnswerCategory............$correctAnswerCategory');
 
     // Użyj nieco jaśniejszych kolorów dla podświetlenia
     return wasCorrect ? Colors.green.shade400 : Colors.red.shade400;
@@ -993,248 +990,261 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
 
                                   print('Building item $index: Type: $itemType, Link: $itemLink');
 
-                                  return ClipRRect(
-                                    borderRadius: BorderRadius.circular(20),
-                                    child: Stack(children: [
-                                      Container(
-                                        child: Stack(
-                                          alignment: Alignment.center,
-                                          children: [
-                                            // --- BUDOWANIE ELEMENTU ZALEŻNIE OD TYPU ---
-                                            Builder(
-                                              builder: (context) {
-                                                // --- MUZYKA ---
-                                                if (itemType == 'musick') {
-                                                  return Image.asset(
-                                                    'lib/logoIcon/headphones.jpg',
-                                                    fit: BoxFit.contain,
-                                                  );
-                                                }
-                                                // --- CYTATY (jeśli wrócą) ---
-                                                else if (itemType == 'quotes') {
-                                                  return Center(
-                                                    child: SingleChildScrollView(
-                                                      child: Padding(
-                                                        padding: const EdgeInsets.all(Sizes.p16),
-                                                        child: Text(
-                                                          itemQuote ?? 'Quote not available',
-                                                          textAlign: TextAlign.center,
-                                                          style: const TextStyle(color: Colors.white, fontSize: 18),
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: _getHighlightColor(),
+                                        width: 5.0,
+                                        style: BorderStyle.solid,
+                                      ),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(20),
+                                      child: Stack(
+                                        children: [
+                                          Container(
+                                            child: Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                // --- BUDOWANIE ELEMENTU ZALEŻNIE OD TYPU ---
+                                                Builder(
+                                                  builder: (context) {
+                                                    // --- MUZYKA ---
+                                                    if (itemType == 'musick') {
+                                                      return Image.asset(
+                                                        'lib/logoIcon/headphones.jpg',
+                                                        fit: BoxFit.contain,
+                                                      );
+                                                    }
+                                                    // --- CYTATY (jeśli wrócą) ---
+                                                    else if (itemType == 'quotes') {
+                                                      return Center(
+                                                        child: SingleChildScrollView(
+                                                          child: Padding(
+                                                            padding: const EdgeInsets.all(Sizes.p16),
+                                                            child: Text(
+                                                              itemQuote ?? 'Quote not available',
+                                                              textAlign: TextAlign.center,
+                                                              style: const TextStyle(color: Colors.white, fontSize: 18),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }
+                                                    // --- WIDEO ---
+                                                    else if (itemType == 'video') {
+                                                      // Używamy FutureBuilder do obsługi inicjalizacji
+                                                      return FutureBuilder<void>(
+                                                        key: ValueKey('video_$index'), // Klucz dla poprawnego zarządzania stanem
+                                                        future: _initializeVideoPlayerFuture,
+                                                        builder: (context, snapshot) {
+                                                          print(
+                                                              "FutureBuilder for video $index: ConnectionState=${snapshot.connectionState}, HasError=${snapshot.hasError}, Controller=${_videoController != null}, Initialized=${_videoController?.value.isInitialized}");
+
+                                                          // --- STAN PO ZAKOŃCZENIU FUTURE ---
+                                                          if (snapshot.connectionState == ConnectionState.done) {
+                                                            // --- BŁĄD INICJALIZACJI ---
+                                                            if (snapshot.hasError || _videoController == null || !_videoController!.value.isInitialized) {
+                                                              print("FutureBuilder ERROR or controller not ready: ${snapshot.error}");
+                                                              return Center(
+                                                                child: Column(
+                                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                                  children: [
+                                                                    const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                                                                    gapH8,
+                                                                    Text(_videoController == null ? "Video controller disposed" : "Failed to load video",
+                                                                        style: const TextStyle(color: Colors.white70)),
+                                                                  ],
+                                                                ),
+                                                              );
+                                                            }
+                                                            // --- SUKCES INICJALIZACJI ---
+                                                            else {
+                                                              // Kontroler jest gotowy, pokaż odtwarzacz
+                                                              return SizedBox.expand(
+                                                                child: FittedBox(
+                                                                  fit: BoxFit.cover,
+                                                                  child: SizedBox(
+                                                                    width: _videoController!.value.size.width,
+                                                                    height: _videoController!.value.size.height,
+                                                                    child: VideoPlayer(_videoController!),
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            }
+                                                          }
+                                                          // --- STAN ŁADOWANIA (FUTURE W TRAKCIE) ---
+                                                          else {
+                                                            return const Center(
+                                                              child: CircularProgressIndicator(),
+                                                            );
+                                                          }
+                                                        },
+                                                      );
+                                                    }
+                                                    // --- OBRAZY (domyślny typ) ---
+                                                    else {
+                                                      if (itemLink != null && itemLink.isNotEmpty) {
+                                                        return CachedNetworkImage(
+                                                          imageUrl: itemLink,
+                                                          fit: BoxFit.cover, // Użyj cover, aby wypełnić kontener
+                                                          width: double.infinity,
+                                                          height: double.infinity,
+                                                          placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                                                          errorWidget: (context, url, error) => const Center(child: Icon(Icons.error, color: Colors.red, size: 48)),
+                                                        );
+                                                      } else {
+                                                        // Obsługa braku linku dla obrazu
+                                                        return const Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 48));
+                                                      }
+                                                    }
+                                                  },
+                                                ),
+
+                                                // --- PRZYCISKI I PASKI POSTĘPU (NA WIERZCHU) ---
+
+                                                // Przycisk Play/Pause dla MUZYKI
+                                                if (itemType == 'musick')
+                                                  Center(
+                                                    // Wyśrodkuj przycisk
+                                                    child: ElevatedButton(
+                                                      style: ElevatedButton.styleFrom(
+                                                        shape: const CircleBorder(),
+                                                        padding: const EdgeInsets.all(15),
+                                                        backgroundColor: Colors.black54, // Półprzezroczyste tło
+                                                      ),
+                                                      onPressed: () async {
+                                                        if (itemLink == null || itemLink.isEmpty) return;
+                                                        if (isPlaying) {
+                                                          await player.pause();
+                                                        } else {
+                                                          try {
+                                                            await player.play(UrlSource(itemLink));
+                                                            // statusPlayer(); // Listenery są już w initState
+                                                          } catch (e) {
+                                                            print("Error playing audio: $e");
+                                                            // Pokaż błąd użytkownikowi
+                                                            if (mounted) {
+                                                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Error playing audio file.")));
+                                                            }
+                                                          }
+                                                        }
+                                                        setState(() {
+                                                          isPlaying = !isPlaying;
+                                                        });
+                                                      },
+                                                      child: Icon(
+                                                        isPlaying ? Icons.pause : Icons.play_arrow,
+                                                        size: 40,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
+
+                                                // Pasek postępu dla MUZYKI
+                                                if (itemType == 'musick')
+                                                  Positioned(
+                                                    left: Sizes.p16,
+                                                    right: Sizes.p16,
+                                                    bottom: 10,
+                                                    child: Container(
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.black.withOpacity(0.7), // Lepsza widoczność
+                                                        borderRadius: BorderRadius.circular(10),
+                                                      ),
+                                                      padding: const EdgeInsets.symmetric(horizontal: Sizes.p12, vertical: Sizes.p8),
+                                                      child: ProgressBar(
+                                                        progress: position,
+                                                        total: duration,
+                                                        onSeek: (value) async {
+                                                          await player.seek(value);
+                                                        },
+                                                        barHeight: 8, // Cieńszy pasek
+                                                        baseBarColor: Colors.grey[700],
+                                                        progressBarColor: Colors.blueAccent,
+                                                        bufferedBarColor: Colors.grey[500],
+                                                        thumbColor: Colors.blueAccent,
+                                                        timeLabelTextStyle: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.white, // Biały tekst
                                                         ),
                                                       ),
                                                     ),
-                                                  );
-                                                }
-                                                // --- WIDEO ---
-                                                else if (itemType == 'video') {
-                                                  // Używamy FutureBuilder do obsługi inicjalizacji
-                                                  return FutureBuilder<void>(
-                                                    key: ValueKey('video_$index'), // Klucz dla poprawnego zarządzania stanem
-                                                    future: _initializeVideoPlayerFuture,
-                                                    builder: (context, snapshot) {
-                                                      print(
-                                                          "FutureBuilder for video $index: ConnectionState=${snapshot.connectionState}, HasError=${snapshot.hasError}, Controller=${_videoController != null}, Initialized=${_videoController?.value.isInitialized}");
-
-                                                      // --- STAN PO ZAKOŃCZENIU FUTURE ---
-                                                      if (snapshot.connectionState == ConnectionState.done) {
-                                                        // --- BŁĄD INICJALIZACJI ---
-                                                        if (snapshot.hasError || _videoController == null || !_videoController!.value.isInitialized) {
-                                                          print("FutureBuilder ERROR or controller not ready: ${snapshot.error}");
-                                                          return Center(
-                                                            child: Column(
-                                                              mainAxisAlignment: MainAxisAlignment.center,
-                                                              children: [
-                                                                const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                                                                gapH8,
-                                                                Text(_videoController == null ? "Video controller disposed" : "Failed to load video", style: const TextStyle(color: Colors.white70)),
-                                                              ],
-                                                            ),
-                                                          );
-                                                        }
-                                                        // --- SUKCES INICJALIZACJI ---
-                                                        else {
-                                                          // Kontroler jest gotowy, pokaż odtwarzacz
-                                                          return SizedBox.expand(
-                                                            child: FittedBox(
-                                                              fit: BoxFit.cover,
-                                                              child: SizedBox(
-                                                                width: _videoController!.value.size.width,
-                                                                height: _videoController!.value.size.height,
-                                                                child: VideoPlayer(_videoController!),
-                                                              ),
-                                                            ),
-                                                          );
-                                                        }
-                                                      }
-                                                      // --- STAN ŁADOWANIA (FUTURE W TRAKCIE) ---
-                                                      else {
-                                                        return const Center(
-                                                          child: CircularProgressIndicator(),
-                                                        );
-                                                      }
-                                                    },
-                                                  );
-                                                }
-                                                // --- OBRAZY (domyślny typ) ---
-                                                else {
-                                                  if (itemLink != null && itemLink.isNotEmpty) {
-                                                    return CachedNetworkImage(
-                                                      imageUrl: itemLink,
-                                                      fit: BoxFit.cover, // Użyj cover, aby wypełnić kontener
-                                                      width: double.infinity,
-                                                      height: double.infinity,
-                                                      placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                                                      errorWidget: (context, url, error) => const Center(child: Icon(Icons.error, color: Colors.red, size: 48)),
-                                                    );
-                                                  } else {
-                                                    // Obsługa braku linku dla obrazu
-                                                    return const Center(child: Icon(Icons.image_not_supported, color: Colors.grey, size: 48));
-                                                  }
-                                                }
-                                              },
-                                            ),
-
-                                            // --- PRZYCISKI I PASKI POSTĘPU (NA WIERZCHU) ---
-
-                                            // Przycisk Play/Pause dla MUZYKI
-                                            if (itemType == 'musick')
-                                              Center(
-                                                // Wyśrodkuj przycisk
-                                                child: ElevatedButton(
-                                                  style: ElevatedButton.styleFrom(
-                                                    shape: const CircleBorder(),
-                                                    padding: const EdgeInsets.all(15),
-                                                    backgroundColor: Colors.black54, // Półprzezroczyste tło
                                                   ),
-                                                  onPressed: () async {
-                                                    if (itemLink == null || itemLink.isEmpty) return;
-                                                    if (isPlaying) {
-                                                      await player.pause();
-                                                    } else {
-                                                      try {
-                                                        await player.play(UrlSource(itemLink));
-                                                        // statusPlayer(); // Listenery są już w initState
-                                                      } catch (e) {
-                                                        print("Error playing audio: $e");
-                                                        // Pokaż błąd użytkownikowi
-                                                        if (mounted) {
-                                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Error playing audio file.")));
-                                                        }
-                                                      }
-                                                    }
-                                                    setState(() {
-                                                      isPlaying = !isPlaying;
-                                                    });
-                                                  },
-                                                  child: Icon(
-                                                    isPlaying ? Icons.pause : Icons.play_arrow,
-                                                    size: 40,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              ),
 
-                                            // Pasek postępu dla MUZYKI
-                                            if (itemType == 'musick')
-                                              Positioned(
-                                                left: Sizes.p16,
-                                                right: Sizes.p16,
-                                                bottom: 10,
-                                                child: Container(
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.black.withOpacity(0.7), // Lepsza widoczność
-                                                    borderRadius: BorderRadius.circular(10),
-                                                  ),
-                                                  padding: const EdgeInsets.symmetric(horizontal: Sizes.p12, vertical: Sizes.p8),
-                                                  child: ProgressBar(
-                                                    progress: position,
-                                                    total: duration,
-                                                    onSeek: (value) async {
-                                                      await player.seek(value);
-                                                    },
-                                                    barHeight: 8, // Cieńszy pasek
-                                                    baseBarColor: Colors.grey[700],
-                                                    progressBarColor: Colors.blueAccent,
-                                                    bufferedBarColor: Colors.grey[500],
-                                                    thumbColor: Colors.blueAccent,
-                                                    timeLabelTextStyle: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.white, // Biały tekst
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
+                                                // Przycisk Play/Pause i Pasek Postępu dla WIDEO
+                                                if (itemType == 'video' && _videoController != null && _videoController!.value.isInitialized)
 
-                                            // Przycisk Play/Pause i Pasek Postępu dla WIDEO
-                                            if (itemType == 'video' && _videoController != null && _videoController!.value.isInitialized)
-
-                                              // Nakładka z przyciskiem i paskiem tylko gdy wideo jest gotowe
-                                              Stack(
-                                                alignment: Alignment.center,
-                                                children: [
-                                                  // Przycisk Play/Pause
-                                                  Center(
-                                                    child: IconButton(
-                                                      icon: Icon(
-                                                        _isVideoPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
-                                                        size: 60.0, // Większy przycisk
-                                                        color: Colors.white.withOpacity(0.8), // Lekko przezroczysty
-                                                      ),
-                                                      onPressed: () {
-                                                        if (_videoController != null && _videoController!.value.isInitialized) {
-                                                          setState(() {
-                                                            if (_isVideoPlaying) {
-                                                              _videoController!.pause();
-                                                            } else {
-                                                              _videoController!.play();
+                                                  // Nakładka z przyciskiem i paskiem tylko gdy wideo jest gotowe
+                                                  Stack(
+                                                    alignment: Alignment.center,
+                                                    children: [
+                                                      // Przycisk Play/Pause
+                                                      Center(
+                                                        child: IconButton(
+                                                          icon: Icon(
+                                                            _isVideoPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                                                            size: 60.0, // Większy przycisk
+                                                            color: Colors.white.withOpacity(0.8), // Lekko przezroczysty
+                                                          ),
+                                                          onPressed: () {
+                                                            if (_videoController != null && _videoController!.value.isInitialized) {
+                                                              setState(() {
+                                                                if (_isVideoPlaying) {
+                                                                  _videoController!.pause();
+                                                                } else {
+                                                                  _videoController!.play();
+                                                                }
+                                                                // _isVideoPlaying jest aktualizowane przez listener
+                                                              });
                                                             }
-                                                            // _isVideoPlaying jest aktualizowane przez listener
-                                                          });
-                                                        }
-                                                      },
-                                                    ),
-                                                  ),
-                                                  // Pasek postępu
-                                                  Positioned(
-                                                    left: 10, // Mniejsze marginesy
-                                                    right: 10,
-                                                    bottom: 10,
-                                                    child: Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), // Mniejszy padding
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.black.withOpacity(0.7),
-                                                        borderRadius: BorderRadius.circular(8),
+                                                          },
+                                                        ),
                                                       ),
-                                                      child: ValueListenableBuilder(
-                                                        // Używamy ValueListenableBuilder zamiast polegania na setState z listenera dla paska
-                                                        valueListenable: _videoController!,
-                                                        builder: (context, VideoPlayerValue value, child) {
-                                                          return ProgressBar(
-                                                            progress: value.position,
-                                                            total: value.duration,
-                                                            onSeek: (duration) {
-                                                              _videoController!.seekTo(duration);
+                                                      // Pasek postępu
+                                                      Positioned(
+                                                        left: 10, // Mniejsze marginesy
+                                                        right: 10,
+                                                        bottom: 10,
+                                                        child: Container(
+                                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), // Mniejszy padding
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.black.withOpacity(0.7),
+                                                            borderRadius: BorderRadius.circular(8),
+                                                          ),
+                                                          child: ValueListenableBuilder(
+                                                            // Używamy ValueListenableBuilder zamiast polegania na setState z listenera dla paska
+                                                            valueListenable: _videoController!,
+                                                            builder: (context, VideoPlayerValue value, child) {
+                                                              return ProgressBar(
+                                                                progress: value.position,
+                                                                total: value.duration,
+                                                                onSeek: (duration) {
+                                                                  _videoController!.seekTo(duration);
+                                                                },
+                                                                barHeight: 6, // Cieńszy pasek
+                                                                baseBarColor: Colors.grey[700],
+                                                                progressBarColor: Colors.redAccent, // Inny kolor
+                                                                bufferedBarColor: Colors.grey[500],
+                                                                thumbColor: Colors.redAccent,
+                                                                timeLabelTextStyle: const TextStyle(
+                                                                  color: Colors.white,
+                                                                  fontSize: 10, // Mniejszy tekst czasu
+                                                                ),
+                                                              );
                                                             },
-                                                            barHeight: 6, // Cieńszy pasek
-                                                            baseBarColor: Colors.grey[700],
-                                                            progressBarColor: Colors.redAccent, // Inny kolor
-                                                            bufferedBarColor: Colors.grey[500],
-                                                            thumbColor: Colors.redAccent,
-                                                            timeLabelTextStyle: const TextStyle(
-                                                              color: Colors.white,
-                                                              fontSize: 10, // Mniejszy tekst czasu
-                                                            ),
-                                                          );
-                                                        },
+                                                          ),
+                                                        ),
                                                       ),
-                                                    ),
+                                                    ],
                                                   ),
-                                                ],
-                                              ),
-                                          ],
-                                        ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ]),
+                                    ),
                                   );
                                 },
                               ),
