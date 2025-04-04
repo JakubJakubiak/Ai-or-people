@@ -890,7 +890,18 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
             // Jeśli allListItems jest nadal pusta po próbie załadowania (np. błąd przetwarzania powyżej)
             if (allListItems.isEmpty) {
               return Container(
-                decoration: const BoxDecoration(/* ... gradient ... */),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFF1a1a2e),
+                      Color(0xFF16213e),
+                      Color(0xFF0f3460),
+                    ],
+                    stops: [0.0, 0.6, 1.0],
+                  ),
+                ),
                 child: const Center(child: Text("No content available.", style: TextStyle(color: Colors.white))),
               );
             }
