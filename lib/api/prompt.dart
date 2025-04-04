@@ -8,6 +8,7 @@ class HomePageManager {
   static const urlMusickHuman = 'https://raw.githubusercontent.com/JakubJakubiak/jsonList/main/tinyncsmusic.json';
   static const urlMusickAi = 'https://raw.githubusercontent.com/JakubJakubiak/jsonList/main/SunoMusicList.json';
   static const videoLinksAi = 'https://raw.githubusercontent.com/JakubJakubiak/jsonList/refs/heads/main/video_links_ai.json';
+  static const videoLinksHuman = 'https://raw.githubusercontent.com/JakubJakubiak/jsonList/refs/heads/main/video_links_human.json';
 
   // static const quotesHumanUrl =
   //     'https://raw.githubusercontent.com/JakubJakubiak/jsonList/main/quotes.json';
@@ -20,6 +21,7 @@ class HomePageManager {
     final uriMusickHuman = Uri.parse(urlMusickHuman);
     final uriMusickAi = Uri.parse(urlMusickAi);
     final urivideoLinksAi = Uri.parse(videoLinksAi);
+    final urivideoLinksHuman = Uri.parse(videoLinksHuman);
     // final uriQuotesHuman = Uri.parse(quotesHumanUrl);
     // final uriQuotesAi = Uri.parse(quotesAiUrl);
 
@@ -29,6 +31,7 @@ class HomePageManager {
         get(uriMusickHuman),
         get(uriMusickAi),
         get(urivideoLinksAi),
+        get(urivideoLinksHuman),
         // get(uriQuotesHuman),
         // get(uriQuotesAi),
       ]);
@@ -38,6 +41,7 @@ class HomePageManager {
         responses[1],
         responses[2],
         responses[3],
+        responses[4],
       );
     } catch (e) {
       resultNotifier.value = RequestLoadFailure();
@@ -49,16 +53,11 @@ class HomePageManager {
     Response responseMusick,
     Response responseMusickAi,
     Response responsvideoLinksAi,
+    Response responsvideoLinksHuman,
     // Response quotesHuman,
     // Response quotesAi,
   ) {
-    // if (response.statusCode >= 400 ||
-    //     responseMusick.statusCode >= 400 ||
-    //     responseMusickAi.statusCode >= 400||
-    //     quotesHuman.statusCode >= 400||
-    //     quotesAi.statusCode >= 400
-    //     )
-    if (response.statusCode >= 400 || responseMusick.statusCode >= 400 || responseMusickAi.statusCode >= 400 || responsvideoLinksAi.statusCode >= 400) {
+    if (response.statusCode >= 400 || responseMusick.statusCode >= 400 || responseMusickAi.statusCode >= 400 || responsvideoLinksAi.statusCode >= 400 || responsvideoLinksHuman.statusCode >= 400) {
       resultNotifier.value = RequestLoadFailure();
     } else {
       // final decodedVideoLinks = jsonDecode(responsvideoLinksAi.body);
@@ -67,6 +66,7 @@ class HomePageManager {
         'tinyncsmusic': jsonDecode(responseMusick.body),
         'musicAi': jsonDecode(responseMusickAi.body),
         'videoLinksAi': jsonDecode(responsvideoLinksAi.body),
+        'videoLinksHuman': jsonDecode(responsvideoLinksHuman.body),
         // 'videoAi': jsonDecode(responseMusickAi.body),
         // 'videoHuman': jsonDecode(responseMusickAi.body),
         // 'quotesHuman': jsonDecode(quotesHuman.body),

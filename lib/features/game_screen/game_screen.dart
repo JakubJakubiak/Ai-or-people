@@ -490,12 +490,14 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
 
   // Konfiguracja listy elementów gry na podstawie pobranych danych JSON
   void setupAllListItems(
-      Map<String, dynamic> jsonDataImages,
-      List<dynamic> jsonDataMusickHuman,
-      Map<String, dynamic> jsonDataMusickAi,
-      List<dynamic> jsonDataquotesHuman, // Obecnie nieużywane
-      List<dynamic> jsonDataquotesAi, // Obecnie nieużywane
-      List<dynamic> jsonDataVideoAi) {
+    Map<String, dynamic> jsonDataImages,
+    List<dynamic> jsonDataMusickHuman,
+    Map<String, dynamic> jsonDataMusickAi,
+    // List<dynamic> jsonDataquotesHuman, // Obecnie nieużywane
+    // List<dynamic> jsonDataquotesAi, // Obecnie nieużywane
+    List<dynamic> jsonDataVideoAi,
+    List<dynamic> jsonDataVideoHuman,
+  ) {
     allListItems.clear(); // Wyczyść listę przed dodaniem nowych elementów
 
     // Przetwarzanie obrazów
@@ -504,41 +506,36 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
       return {'link': e['link'], 'category': e['op'], 'typ': 'images'};
     }).toList();
 
-    // Przetwarzanie filmów AI
     final randomvideoLinksAi = jsonDataVideoAi.map<Map<String, dynamic>>((e) {
-      return {'link': e['url'], 'category': e['op'] ?? 'ai', 'typ': 'video'}; // Upewnij się, że kategoria 'op' istnieje, domyślnie 'ai'
+      return {
+        'link': e['url'],
+        'category': e['op'] ?? 'ai',
+        'typ': 'video',
+      };
+      // Upewnij się, że kategoria 'op' istnieje, domyślnie 'ai'
+    }).toList();
+
+    final randomvideoLinksHuman = jsonDataVideoHuman.map<Map<String, dynamic>>((e) {
+      return {'link': e['url'], 'category': e['op'] ?? 'human', 'typ': 'video'};
     }).toList();
 
     // Przetwarzanie muzyki ludzkiej
     final randomMusickHuman = jsonDataMusickHuman.map<Map<String, dynamic>>((e) {
-      return {
-        'link': e['url'],
-        'category': 'human', // Kategoria ustawiona na sztywno
-        'track': e['track'],
-        'artistraw': e['artistraw'],
-        'imageCover': e['cover'],
-        'typ': 'musick'
-      };
+      return {'link': e['url'], 'category': 'human', 'track': e['track'], 'artistraw': e['artistraw'], 'imageCover': e['cover'], 'typ': 'musick'};
     }).toList();
 
     // Przetwarzanie muzyki AI
     final randomMusickAi = (jsonDataMusickAi['playlists'] as List<dynamic>? ?? []).expand((playlist) {
       return (playlist['playlist_clips'] as List<dynamic>? ?? []).map<Map<String, dynamic>>((clipData) {
         final clip = clipData['clip'];
-        return {
-          'link': clip['audio_url'],
-          'imageCover': clip['image_url'],
-          'category': 'ai', // Kategoria ustawiona na sztywno
-          'typ': 'musick'
-        };
+        return {'link': clip['audio_url'], 'imageCover': clip['image_url'], 'category': 'ai', 'typ': 'musick'};
       });
     }).toList();
 
-    // Połącz wszystkie listy i przetasuj
-    // final localList = (randomImages + randomMusickHuman + randomMusickAi + randomvideoLinksAi)
-    //   ..shuffle(Random());
+    final localList = (randomvideoLinksAi + randomMusickAi + randomvideoLinksHuman + randomMusickHuman + randomImages)..shuffle(Random());
+    // print('/////////randomvideoLinksAi///////////$randomvideoLinksHuman');
 
-    final localList = (randomvideoLinksAi + randomMusickAi + randomMusickHuman + randomImages)..shuffle(Random());
+    // final localList = (randomvideoLinksHuman)..shuffle(Random());
 
     allListItems.addAll(localList);
     print("Total items loaded: ${allListItems.length}");
@@ -861,19 +858,13 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
               if (allListItems.isEmpty) {
                 final jsonData = requestState.data;
                 try {
-                  final jsonDataHumanOrAi = jsonData['humnOrAi'] as Map<String, dynamic>? ?? {}; // Bezpieczne rzutowanie
+                  final jsonDataHumanOrAi = jsonData['humnOrAi'] as Map<String, dynamic>? ?? {};
                   final jsonDatatinyncsmusic = jsonData['tinyncsmusic'] as List<dynamic>? ?? [];
                   final jsonDatatinyncsmusicAi = jsonData['musicAi'] as Map<String, dynamic>? ?? {};
-                  final videoLinksData = jsonData['videoLinksAi'] as List<dynamic>? ?? [];
+                  final videoLinksAi = jsonData['videoLinksAi'] as List<dynamic>? ?? [];
+                  final videoLinksHuman = jsonData['videoLinksHuman'] as List<dynamic>? ?? [];
 
-                  setupAllListItems(
-                    jsonDataHumanOrAi,
-                    jsonDatatinyncsmusic,
-                    jsonDatatinyncsmusicAi,
-                    [], // Puste listy dla quotes, bo nieużywane
-                    [],
-                    videoLinksData,
-                  );
+                  setupAllListItems(jsonDataHumanOrAi, jsonDatatinyncsmusic, jsonDatatinyncsmusicAi, videoLinksAi, videoLinksHuman);
                   print("Data setup complete. Total items: ${allListItems.length}");
                   // Sprawdź, czy po setupie lista nadal jest pusta
                   if (allListItems.isEmpty && mounted) {
@@ -883,8 +874,10 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                         const SnackBar(content: Text("No game items loaded. Please try again later.")),
                       );
                     });
-                    // Można zwrócić widok błędu/pusty
-                    return Container(/* ... tło ... */ child: const Center(child: Text("No game items available.", style: TextStyle(color: Colors.white))));
+
+                    return Container(
+                        /* ... tło ... */
+                        child: const Center(child: Text("No game items available.", style: TextStyle(color: Colors.white))));
                   }
                 } catch (e) {
                   print("Error processing loaded data: $e");
