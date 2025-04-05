@@ -157,16 +157,16 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
 
     // Obliczanie mnożnika punktów na podstawie dni logowania
     final loginDay = StreakService.instance.getCurrentStreak();
-    if (loginDay > 1) {
+    if (loginDay >= 1) {
       double comboCalculator = 1.2;
       comboCalculator += (loginDay ~/ 2) * 0.5;
-      comboCalculator = min(comboCalculator, 10.0); // Ogranicz do max 10.0
+      comboCalculator = min(comboCalculator, 10.0);
       setState(() {
         boostX = comboCalculator;
       });
     }
 
-    _loadRewardedAd(); // Załaduj reklamę nagradzaną na start
+    _loadRewardedAd();
   }
 
   // Przetwarzanie odpowiedzi użytkownika
@@ -264,7 +264,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
       double comboCalculator = 1.2;
       comboCalculator += (loginDay ~/ 2) * 0.5;
       comboCalculator = min(comboCalculator, 10.0);
-      // Nie aktualizujemy boostX w stanie tutaj, bo to koniec gry
+      setState(() {
+        boostX = comboCalculator;
+      });
 
       // Pokaż modal z informacją o dniach logowania, jeśli to nowy dzień
       if (isNewDay && mounted) {
@@ -677,9 +679,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
       _initializeVideoPlayerFuture = _videoController!.initialize().then((_) {
         if (mounted && _videoControllerIndex == index) {
           print("Video Initialized successfully for index $index");
-          // _videoController!.play(); // Opcjonalnie: Automatyczne odtwarzanie po inicjalizacji
-          // _isVideoPlaying = true;
-          setState(() {}); // Przebuduj UI, aby pokazać pierwszy kadr
+          _videoController!.play();
+          _isVideoPlaying = true;
+          setState(() {});
         } else {
           print("Video Initialized for index $index, but widget is no longer mounted or index changed.");
           // Jeśli widget został zdjęty lub indeks się zmienił zanim inicjalizacja się zakończyła,
@@ -953,7 +955,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            if (boostX > 1)
+                            if (boostX >= 1)
                               Padding(
                                 // Dodaj odstęp dla animacji
                                 padding: const EdgeInsets.only(top: Sizes.p8),
@@ -1061,10 +1063,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                                                                   ],
                                                                 ),
                                                               );
-                                                            }
-                                                            // --- SUKCES INICJALIZACJI ---
-                                                            else {
-                                                              // Kontroler jest gotowy, pokaż odtwarzacz
+                                                            } else {
                                                               return SizedBox.expand(
                                                                 child: FittedBox(
                                                                   fit: BoxFit.cover,
@@ -1076,9 +1075,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                                                                 ),
                                                               );
                                                             }
-                                                          }
-                                                          // --- STAN ŁADOWANIA (FUTURE W TRAKCIE) ---
-                                                          else {
+                                                          } else {
                                                             return const Center(
                                                               child: CircularProgressIndicator(),
                                                             );
@@ -1110,7 +1107,6 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                                                 // Przycisk Play/Pause dla MUZYKI
                                                 if (itemType == 'musick')
                                                   Center(
-                                                    // Wyśrodkuj przycisk
                                                     child: ElevatedButton(
                                                       style: ElevatedButton.styleFrom(
                                                         shape: const CircleBorder(),
@@ -1124,10 +1120,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                                                         } else {
                                                           try {
                                                             await player.play(UrlSource(itemLink));
-                                                            // statusPlayer(); // Listenery są już w initState
                                                           } catch (e) {
                                                             print("Error playing audio: $e");
-                                                            // Pokaż błąd użytkownikowi
                                                             if (mounted) {
                                                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Error playing audio file.")));
                                                             }
@@ -1188,8 +1182,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                                                         child: IconButton(
                                                           icon: Icon(
                                                             _isVideoPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
-                                                            size: 60.0, // Większy przycisk
-                                                            color: Colors.white.withOpacity(0.8), // Lekko przezroczysty
+                                                            size: 60.0,
+                                                            color: Colors.white.withOpacity(0.8),
                                                           ),
                                                           onPressed: () {
                                                             if (_videoController != null && _videoController!.value.isInitialized) {
