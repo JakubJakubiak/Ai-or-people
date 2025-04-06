@@ -92,13 +92,15 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     return "$twoDigitMinutes:$twoDigitSeconds";
   }
 
-  // Zwiększanie wyniku
-  void _incrementScore(double boostX) {
+  void _incrementScore(double boostXLocal) {
+    double comboCalculator = boostXLocal;
+    comboCalculator += boostXLocal * 0.1;
+    comboCalculator = min(double.parse(comboCalculator.toStringAsFixed(1)), 12.0);
+
     setState(() {
-      score = (score + 10 * boostX).toInt();
-      _controller.addValue(10 * boostX);
-      // Resetowanie koloru paska - czy to na pewno potrzebne?
-      // _appBarColor = Colors.black;
+      score = (score + 10 * boostXLocal).toInt();
+      _controller.addValue(10 * boostXLocal);
+      boostX = comboCalculator;
     });
   }
 
@@ -248,6 +250,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   void _loseHealth() {
     setState(() {
       currentHealth--;
+      boostX = 1;
     });
     if (currentHealth <= 0) {
       endGame(); // Koniec gry, jeśli zdrowie spadnie do zera
@@ -260,13 +263,13 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     StreakService.instance.recordEntry().then((isNewDay) {
       final loginDay = StreakService.instance.getCurrentStreak();
 
-      // Ponownie oblicz mnożnik na wypadek, gdyby zmienił się dzień
-      double comboCalculator = 1.2;
-      comboCalculator += (loginDay ~/ 2) * 0.5;
-      comboCalculator = min(comboCalculator, 10.0);
-      setState(() {
-        boostX = comboCalculator;
-      });
+      // // Ponownie oblicz mnożnik na wypadek, gdyby zmienił się dzień
+      // double comboCalculator = 1.2;
+      // comboCalculator += (loginDay ~/ 2) * 0.5;
+      // comboCalculator = min(comboCalculator, 10.0);
+      // setState(() {
+      //   boostX = comboCalculator;
+      // });
 
       // Pokaż modal z informacją o dniach logowania, jeśli to nowy dzień
       if (isNewDay && mounted) {

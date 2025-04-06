@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui; // Import for ui.Gradient
 
 class AnimatedPixelFlameCombo extends StatefulWidget {
-  final double comboCount; // Keep as double to handle values like 1.2
+  final double comboCount;
   final double size;
 
   const AnimatedPixelFlameCombo({
