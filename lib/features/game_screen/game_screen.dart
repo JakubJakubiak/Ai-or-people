@@ -561,6 +561,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   // Buforowanie obrazów w tle
   Future<void> indexBuforImages() async {
     if (!mounted || allListItems.isEmpty) return; // Sprawdzenie bezpieczeństwa
+
     int currentIn = this.currentIndex;
     int imagesToPrecache = 5; // Zmniejszono liczbę dla wydajności
     for (int i = 1; i <= imagesToPrecache; i++) {
@@ -569,6 +570,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         String? imageUrl = allListItems[nextIndex]['link'] as String?;
         if (imageUrl != null && imageUrl.isNotEmpty) {
           // Użyj try-catch, aby złapać ewentualne błędy podczas precache
+          // print('..........Building item..........$imageUrl');
           try {
             await precacheImage(
               CachedNetworkImageProvider(imageUrl),
@@ -996,8 +998,14 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                                   final itemLink = item['link'] as String?;
                                   final itemQuote = item['quote'] as String?;
 
-                                  // print('Building item $index: Type: $itemType, Link: $itemLink');
-
+                                  // print('Building item $index: Type: $itemType, Link: $itemLink///$item');
+                                  if (itemLink == null) {
+                                    print('error link: $itemLink');
+                                    pageController.nextPage(
+                                      duration: const Duration(milliseconds: 10),
+                                      curve: Curves.easeInOut,
+                                    );
+                                  }
                                   return Container(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(20),
@@ -1089,6 +1097,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                                                     // --- OBRAZY (domyślny typ) ---
                                                     else {
                                                       if (itemLink != null && itemLink.isNotEmpty) {
+                                                        print("//////Loading image for index $index: $itemLink");
                                                         return CachedNetworkImage(
                                                           imageUrl: itemLink,
                                                           fit: BoxFit.cover, // Użyj cover, aby wypełnić kontener
@@ -1265,7 +1274,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                           child: SizedBox(
                             height: 56,
                             child: FilledButton(
-                              onPressed: (answer != CurrentAnswer.none || currentHealth <= 0) // Wyłącz przycisk, jeśli już odpowiedziano lub koniec gry
+                              onPressed: (answer != CurrentAnswer.none || currentHealth <= 0)
                                   ? null
                                   : () async {
                                       HapticFeedback.mediumImpact();
