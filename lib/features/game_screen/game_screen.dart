@@ -1096,11 +1096,12 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                                                     }
                                                     // --- OBRAZY (domyślny typ) ---
                                                     else {
-                                                      if (itemLink != null && itemLink.isNotEmpty) {
-                                                        print("//////Loading image for index $index: $itemLink");
+                                                      print("//////Loading image for index//111 $index: $itemLink");
+                                                      if (itemLink != null) {
+                                                        print("//////Loading image for index//222 $index: $itemLink");
                                                         return CachedNetworkImage(
                                                           imageUrl: itemLink,
-                                                          fit: BoxFit.cover, // Użyj cover, aby wypełnić kontener
+                                                          fit: BoxFit.cover,
                                                           width: double.infinity,
                                                           height: double.infinity,
                                                           placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
