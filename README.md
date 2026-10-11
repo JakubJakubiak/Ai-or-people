@@ -1,24 +1,71 @@
-# aiimageorpeople
+# Human or AI?
 
-A new Flutter project.
+A mobile game (Flutter) that trains people to tell AI-generated images, videos and music from work made
+by humans. Each round shows one item; the player answers **Human** or **AI**, sees the truth and gets a
+short tip on what gives AI away.
 
-## Getting Started
+- Android: <https://play.google.com/store/apps/details?id=inu.night.humanAI>
+- Website: <https://web-ai-vs-humna.vercel.app> (repo: `JakubJakubiak/web-ai-vs-humna`)
+- Content lists: `JakubJakubiak/jsonList`
 
-This project is a starting point for a Flutter application.
+## How the game works
 
-A few resources to get you started if this is your first Flutter project:
+- Three lives. A correct answer adds `10 × combo` points and raises the combo; a miss resets it.
+- The starting combo grows with the daily streak (`StreakService`).
+- After every answer the card shows a verdict stamp and a tip, then the game moves on by itself.
+- Settings let the player choose which content to practise: images, videos, music.
+- Game over shows the score and accuracy per media type; a rewarded ad restores all lives.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Content
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The app has no backend. It downloads five JSON lists from the `jsonList` repository
+(`lib/api/content_repository.dart`):
 
+| File | Content |
+|---|---|
+| `humnOrAi.json` | images, `{link, op: "ai" \| "human", credit?}` |
+| `video_links_ai.json`, `video_links_human.json` | videos, `{url, op}` |
+| `tinyncsmusic.json` | human music, `{url, track, artistraw, cover}` |
+| `SunoMusicList.json` | AI music, `playlists[].playlist_clips[].clip.audio_url` |
 
-<div style="display: flex;">
-    <img src="https://github.com/user-attachments/assets/a67306a2-7657-4210-94aa-c18a3fe53ed4" alt="photo" style="max-width: 100px; height: 400px;">
-</div>
+Each list loads on its own, so one broken file only removes that kind of content. For every media type
+the deck holds the same number of AI and human items, so the type never gives the answer away. Media that
+fails to load is skipped without costing a life. Dead links are cleaned up, and new items proposed, by the
+GitHub Actions in `jsonList`.
 
+## Project layout
 
+```
+lib/
+  main.dart                          app start, Firebase, ads
+  api/content_repository.dart        loading and parsing the lists, deck building
+  models/game_item.dart              one round: url, type, AI or human
+  features/game_screen/
+    game_screen.dart                 game state and layout
+    tips.dart                        tips shown after each answer
+    streak_service.dart              daily streak
+    widgets/                         media card, answer bar, effects (combo flame, sparks),
+                                     settings, how to play, game over, streak sheet
+  utils/app_colors.dart              colours (shared with the website)
+test/content_repository_test.dart    parsing and deck tests
+```
 
+## Running
+
+```bash
+flutter pub get
+flutter test
+flutter run
+```
+
+iOS notes (Flutter 3.44 / Xcode 27):
+
+- Minimum iOS is 15.
+- Swift Package Manager is turned off in `pubspec.yaml` because the Firebase and AdMob plugin versions
+  used here only support CocoaPods.
+- If `pod install` fails with an encoding error, run it with `LANG=en_US.UTF-8`.
+- `flutter build ios --simulator` may fail on an architecture check; `flutter run -d <simulator>` works.
+
+Debug builds use Google's test ad units (`lib/modules/admob_service.dart`).
+
+<img src="https://github.com/user-attachments/assets/a67306a2-7657-4210-94aa-c18a3fe53ed4" alt="Screenshot of an earlier version" height="400">
