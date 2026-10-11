@@ -20,11 +20,37 @@ short tip on what gives AI away.
 
 ## How the game works
 
-- Three lives. A correct answer adds `10 × combo` points and raises the combo; a miss resets it.
-- The starting combo grows with the daily streak (`StreakService`).
-- After every answer the card shows a verdict stamp and a tip, then the game moves on by itself.
-- Settings let the player choose which content to practise: images, videos, music.
-- Game over shows the score and accuracy per media type; a rewarded ad restores all lives.
+1. The app downloads the content lists and deals a shuffled deck.
+2. A round shows one image, video or song. Images can be opened full screen and zoomed; videos and
+   music start by themselves.
+3. The player taps **Human** or **AI**.
+4. The card shows a verdict stamp (`AI-GENERATED` / `HUMAN-MADE`), the panel below says whether the
+   answer was right and gives a tip. For music the title, cover and credit appear only now, so they
+   cannot give the answer away.
+5. The next round starts by itself (1.8 s after a correct answer, 2.8 s after a miss); **Next** skips the wait.
+6. After the third miss the game over dialog shows the score, the best score and accuracy per media type.
+
+### Scoring
+
+| Rule | Value |
+|---|---|
+| Lives | 3 (`GameScreen.initialHealth`) |
+| Points for a correct answer | `10 × combo`, rounded down |
+| Combo after a correct answer | `combo × 1.1`, one decimal, at most 12 |
+| Combo after a miss | back to 1.0 |
+| Starting combo | 1.0 without a streak, otherwise `1.2 + 0.5 × (streak days ÷ 2)`, at most 10 |
+
+The combo flame grows and changes colour with the multiplier: ember at x1.0, orange fire while it
+builds, violet plasma from about x5.
+
+### Other screens
+
+- **Settings** (top right): choose which content to practise (at least one type stays on), open the
+  daily streak and the how-to-play intro. The choice is remembered.
+- **How to play**: shown once on first launch.
+- **Leaderboard**: Google Play Games / Game Center (`games_services`).
+- **Game over**: *Play again* starts a new run; *Continue · watch ad* shows a rewarded ad and restores
+  all lives while keeping the score.
 
 ## Content
 
@@ -60,6 +86,27 @@ lib/
 test/content_repository_test.dart    parsing and deck tests
 ```
 
+## Configuration
+
+| What | Where |
+|---|---|
+| Ads on/off, leaderboard IDs | `lib/utils/constants.dart` |
+| Ad unit IDs (debug builds use Google test units) | `lib/modules/admob_service.dart` |
+| Address of the content lists | `ContentRepository._base` in `lib/api/content_repository.dart` |
+| Timings (auto-advance, media timeout, skipped dead links in a row) | constants at the top of `_GameScreenState` |
+| Tips shown after answers | `lib/features/game_screen/tips.dart` |
+| Colours | `lib/utils/app_colors.dart` |
+| App icon | `lib/logoIcon/icon.webp` (Android), `lib/logoIcon/ios_icon.jpg` (iOS) |
+
+Saved on the device (`shared_preferences`): best score, enabled content types, whether the intro was
+shown, and the dates used for the daily streak.
+
+## Adding content
+
+Content is not part of the app. Add or remove entries in the `jsonList` repository and every installed
+copy of the game picks them up on the next start. That repository also has a bot that proposes new
+items and removes dead links; see its README.
+
 ## Running
 
 ```bash
@@ -76,4 +123,19 @@ iOS notes (Flutter 3.44 / Xcode 27):
 - If `pod install` fails with an encoding error, run it with `LANG=en_US.UTF-8`.
 - `flutter build ios --simulator` may fail on an architecture check; `flutter run -d <simulator>` works.
 
-Debug builds use Google's test ad units (`lib/modules/admob_service.dart`).
+## Releasing
+
+```bash
+flutter test
+flutter build appbundle --release      # Android, upload to Google Play
+flutter build ipa --release            # iOS, upload with Xcode or Transporter
+```
+
+Raise `version` in `pubspec.yaml` before each release. Test on a real Android device as well: the
+redesign was verified on the iOS simulator.
+
+## Known gaps
+
+- Ad consent is granted in code (`main.dart`); players in the EU need a consent dialog.
+- The privacy policy on the website does not yet mention AdMob and Firebase Analytics.
+- `lib/features/game_screen/widgets/FlameBoostAnimation .dart` (the old pixel flame) is no longer used.
