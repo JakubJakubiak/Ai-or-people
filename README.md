@@ -131,8 +131,28 @@ flutter build appbundle --release      # Android, upload to Google Play
 flutter build ipa --release            # iOS, upload with Xcode or Transporter
 ```
 
-Raise `version` in `pubspec.yaml` before each release. Test on a real Android device as well: the
-redesign was verified on the iOS simulator.
+Raise `version` in `pubspec.yaml` before each release; the number after `+` is the build number and
+must be higher than the one already in the store.
+
+Android signing: put the upload keystore somewhere outside the repository and create
+`android/key.properties` (ignored by git):
+
+```properties
+storeFile=/absolute/path/to/upload-keystore.jks
+storePassword=...
+keyAlias=...
+keyPassword=...
+```
+
+Without that file release builds are signed with the debug key, which is enough to compile and test
+locally but is rejected by Google Play. If the upload key is lost, request a reset in Play Console
+(App integrity → Upload key).
+
+Android build notes (Flutter 3.44): Android Gradle Plugin 8.9.1, Kotlin 2.1.0, Gradle heap 4 GB.
+`minSdkVersion` is 33, so the game installs only on Android 13 and newer.
+
+Test on a real Android device before publishing: the redesign was verified on the iOS simulator, and
+on Android only the debug and release builds were compiled.
 
 ## Known gaps
 
