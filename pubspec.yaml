@@ -39,6 +39,10 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  # firebase_analytics/google_mobile_ads w tych wersjach nie wspierają SPM
+  config:
+    enable-swift-package-manager: false
+
   assets:
     - lib/logoIcon/icon.webp
     - lib/logoIcon/headphones.jpg

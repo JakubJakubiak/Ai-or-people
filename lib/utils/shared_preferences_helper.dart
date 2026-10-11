@@ -1,11 +1,11 @@
+import 'package:humanai/models/game_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPreferencesHelper {
   static SharedPreferences? _prefs;
   static const String _bestScoreKey = 'bestScore';
-  // static const String _dayKey = 'selectedDay';
-  // static const String _trueDayKey = 'trueDay'; 
-  // static const String _dayUsedDateKey = 'dayUsedDate';
+  static const String _enabledTypesKey = 'enabledTypes';
+  static const String _howToPlaySeenKey = 'howToPlaySeen';
 
   // Initialize SharedPreferences instance
   static Future<void> initialize() async {
@@ -25,42 +25,20 @@ class SharedPreferencesHelper {
     return _prefs?.getInt(_bestScoreKey) ?? 0;
   }
 
-  // Save the selected day
-  // static Future<bool> setDay(int day) async {
-  //   if (_prefs != null) {
-  //     return _prefs!.setInt(_dayKey, day);
-  //   }
-  //   return false;
-  // }
+  /// Which kinds of content the player wants to see (all of them by default).
+  static Set<MediaType> getEnabledTypes() {
+    final names = _prefs?.getStringList(_enabledTypesKey);
+    final types = MediaType.values.where((t) => names?.contains(t.name) ?? true).toSet();
+    return types.isEmpty ? MediaType.values.toSet() : types;
+  }
 
-  // Retrieve the selected day
-  // static int getDay() {
-  //   return _prefs?.getInt(_dayKey) ?? 1;
-  // }
+  static Future<void> setEnabledTypes(Set<MediaType> types) async {
+    await _prefs?.setStringList(_enabledTypesKey, types.map((t) => t.name).toList());
+  }
 
-  // Save the trueDay boolean flag
-  // static Future<bool> setTrueDay(bool value) async {
-  //   if (_prefs != null) {
-  //     return _prefs!.setBool(_trueDayKey, value);
-  //   }
-  //   return false;
-  // }
+  static bool getHowToPlaySeen() => _prefs?.getBool(_howToPlaySeenKey) ?? false;
 
-  // Retrieve the trueDay boolean flag
-  // static bool getTrueDay() {
-  //   return _prefs?.getBool(_trueDayKey) ?? false; // Defaults to false if not set
-  // }
-
-  // Save the date when the function was last used
-  // static Future<bool> setDayUsedDate(String date) async {
-  //   if (_prefs != null) {
-  //     return _prefs!.setString(_dayUsedDateKey, date);
-  //   }
-  //   return false;
-  // }
-
-// Retrieve the date when the function was last used
-  // static String getDayUsedDate() {
-  //   return _prefs?.getString(_dayUsedDateKey) ?? '';
-  // }
+  static Future<void> setHowToPlaySeen() async {
+    await _prefs?.setBool(_howToPlaySeenKey, true);
+  }
 }
