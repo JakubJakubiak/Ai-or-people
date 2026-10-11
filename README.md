@@ -8,6 +8,16 @@ short tip on what gives AI away.
 - Website: <https://web-ai-vs-humna.vercel.app> (repo: `JakubJakubiak/web-ai-vs-humna`)
 - Content lists: `JakubJakubiak/jsonList`
 
+## Screenshots
+
+| Video round | Answer and tip | Music round |
+|---|---|---|
+| <img src="docs/screenshots/video.jpg" width="240" alt="Video round with Human and AI buttons"> | <img src="docs/screenshots/reveal.jpg" width="240" alt="AI-generated image revealed with a tip"> | <img src="docs/screenshots/music.jpg" width="240" alt="Music round with equalizer"> |
+
+| Game over | Settings | How to play |
+|---|---|---|
+| <img src="docs/screenshots/results.jpg" width="240" alt="Game over with accuracy per media type"> | <img src="docs/screenshots/settings.jpg" width="240" alt="Settings with content type filter"> | <img src="docs/screenshots/how-to-play.jpg" width="240" alt="How to play dialog"> |
+
 ## How the game works
 
 - Three lives. A correct answer adds `10 × combo` points and raises the combo; a miss resets it.
@@ -67,5 +77,3 @@ iOS notes (Flutter 3.44 / Xcode 27):
 - `flutter build ios --simulator` may fail on an architecture check; `flutter run -d <simulator>` works.
 
 Debug builds use Google's test ad units (`lib/modules/admob_service.dart`).
-
-<img src="https://github.com/user-attachments/assets/a67306a2-7657-4210-94aa-c18a3fe53ed4" alt="Screenshot of an earlier version" height="400">
