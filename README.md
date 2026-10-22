@@ -35,7 +35,7 @@ short tip on what gives AI away.
 | Rule | Value |
 |---|---|
 | Lives | 3 (`GameScreen.initialHealth`) |
-| Points for a correct answer | `10 × combo`, rounded down |
+| Points for a correct answer | `10 × combo`, rounded down; doubled with Premium |
 | Combo after a correct answer | `combo × 1.1`, one decimal, at most 12 |
 | Combo after a miss | back to 1.0 |
 | Starting combo | 1.0 without a streak, otherwise `1.2 + 0.5 × (streak days ÷ 2)`, at most 10 |
@@ -50,7 +50,59 @@ builds, violet plasma from about x5.
 - **How to play**: shown once on first launch.
 - **Leaderboard**: Google Play Games / Game Center (`games_services`).
 - **Game over**: *Play again* starts a new run; *Continue · watch ad* shows a rewarded ad and restores
-  all lives while keeping the score.
+  all lives while keeping the score. A revive from the shop (or Premium's free one) does the same without
+  the ad.
+- **Shop** (store icon, top right): see below.
+
+## Shop
+
+In-app purchases go straight to Google Play Billing and StoreKit through the official
+`in_app_purchase` plugin; there is no RevenueCat and no server. What the player owns is kept on the
+device (`Wallet`, `shared_preferences`) and checked against the store at every start.
+
+| Product id | Type | What it does | Price (set in Play Console) |
+|---|---|---|---|
+| `premium` | subscription, base plan `monthly` | 2× points, no banner ads, one free revive per run | $2.99 / month |
+| `no_ads` | one-time (Apple: non-consumable) | removes the banner ad for good | $2.99 |
+| `revives_5` | consumable | 5 revives | $0.99 |
+| `revives_20` | consumable | 20 revives | $2.99 |
+
+The ids must be created exactly like this in Play Console (*Monetize → Products*: one-time products and
+a subscription `premium` with an auto-renewing monthly base plan) and in App Store Connect. Play
+Console only lets you add products after a build with the billing permission (3.1.0+) has been uploaded.
+Until the products exist the shop shows "—" instead of prices and nothing can be bought.
+
+- At start the app asks the store for the current purchases (`restorePurchases`; with StoreKit 2 this
+  needs no password). That keeps Premium in sync with renewals and cancellations, brings *Remove ads* back
+  after a reinstall and pays out revive packs whose purchase was interrupted. Offline, the last known
+  state is kept.
+- Each purchase id is paid out once (`Wallet.credit`), so a restored purchase never adds revives twice.
+- Revives are not restorable: they live on the device.
+- Premium points go to the leaderboard like any other score.
+- The shop links to the terms of use (Apple's standard EULA) and the privacy policy, and to the store's
+  subscription page while Premium is active, as Apple requires for subscriptions.
+
+## Store graphics
+
+`store/make_store_graphics.py` builds the store screenshots and the Google Play feature graphic from
+full-resolution emulator screenshots in `store/source/`:
+
+```bash
+python3 store/make_store_graphics.py
+```
+
+| Output | Size | Use |
+|---|---|---|
+| `store/google-play/phone/*.png` | 1080 × 1920 | Google Play phone screenshots |
+| `store/google-play/feature-graphic.png` | 1024 × 500 | Google Play feature graphic |
+| `store/app-store/iphone-6.9/*.png` | 1320 × 2868 | App Store, 6.9" iPhone |
+| `store/app-store/iphone-6.5/*.png` | 1242 × 2688 | App Store, 6.5" iPhone |
+
+Headlines and the UI element that is blown up out of the phone are set in `SHOTS` at the top of the
+script. To take new source screenshots: run a debug build on the Android emulator, turn on the status bar
+demo mode (`adb shell am broadcast -a com.android.systemui.demo -e command clock -e hhmm 0941`, etc.),
+hide the banner by setting `flutter.shopNoAds` in the app's preferences (`adb shell run-as
+inu.night.humanAI`), and save with `adb exec-out screencap -p`.
 
 ## Content
 
@@ -76,6 +128,11 @@ lib/
   main.dart                          app start, Firebase, ads
   api/content_repository.dart        loading and parsing the lists, deck building
   models/game_item.dart              one round: url, type, AI or human
+  features/shop/
+    shop_items.dart                  products and their ids
+    store_service.dart               Google Play Billing / StoreKit
+    wallet.dart                      what the player owns (Premium, no ads, revives)
+    shop_sheet.dart                  the shop screen
   features/game_screen/
     game_screen.dart                 game state and layout
     tips.dart                        tips shown after each answer
@@ -84,6 +141,8 @@ lib/
                                      settings, how to play, game over, streak sheet
   utils/app_colors.dart              colours (shared with the website)
 test/content_repository_test.dart    parsing and deck tests
+test/wallet_test.dart                shop: paying out purchases, revives, Premium
+store/                               store screenshots and the script that makes them
 ```
 
 ## Configuration
@@ -157,5 +216,6 @@ on Android only the debug and release builds were compiled.
 ## Known gaps
 
 - Ad consent is granted in code (`main.dart`); players in the EU need a consent dialog.
-- The privacy policy on the website does not yet mention AdMob and Firebase Analytics.
+- The privacy policy on the website does not yet mention AdMob, Firebase Analytics and in-app purchases.
+- The iOS build allows iPad, so App Store Connect also asks for iPad screenshots (none are made yet).
 - `lib/features/game_screen/widgets/FlameBoostAnimation .dart` (the old pixel flame) is no longer used.

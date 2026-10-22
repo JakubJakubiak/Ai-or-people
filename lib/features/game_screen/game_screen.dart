@@ -18,6 +18,8 @@ import 'package:humanai/features/game_screen/widgets/healh_display.dart';
 import 'package:humanai/features/game_screen/widgets/how_to_play.dart';
 import 'package:humanai/features/game_screen/widgets/media_card.dart';
 import 'package:humanai/features/game_screen/widgets/setings_menu.dart';
+import 'package:humanai/features/shop/shop_sheet.dart';
+import 'package:humanai/features/shop/wallet.dart';
 import 'package:humanai/models/game_item.dart';
 import 'package:humanai/modules/admob_service.dart';
 import 'package:humanai/utils/app_colors.dart';
@@ -67,6 +69,9 @@ class _GameScreenState extends State<GameScreen> {
   int _score = 0;
   int _limitAdmob = 0;
   double _boostX = 1;
+
+  /// Premium players get one free revive per run.
+  bool _freeReviveUsed = false;
 
   // State of the current round.
   bool _answered = false;
@@ -123,6 +128,7 @@ class _GameScreenState extends State<GameScreen> {
     _signInToGames();
     _createBannerAd();
     _loadRewardedAd();
+    Wallet.instance.addListener(_onWalletChanged);
 
     if (!SharedPreferencesHelper.getHowToPlaySeen()) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -141,6 +147,7 @@ class _GameScreenState extends State<GameScreen> {
       s.cancel();
     }
     _repository.resultNotifier.removeListener(_onContentState);
+    Wallet.instance.removeListener(_onWalletChanged);
     _player.dispose();
     _video?.dispose();
     _banner?.dispose();
@@ -312,7 +319,7 @@ class _GameScreenState extends State<GameScreen> {
       _tip = Tips.forItem(item);
       if (correct) {
         stats.correct++;
-        _pointsEarned = (10 * _boostX).toInt();
+        _pointsEarned = (10 * _boostX).toInt() * (Wallet.instance.premium ? Wallet.premiumPointsMultiplier : 1);
         _score += _pointsEarned;
         _boostX = min(double.parse((_boostX * 1.1).toStringAsFixed(1)), 12);
       } else {
@@ -396,6 +403,8 @@ class _GameScreenState extends State<GameScreen> {
           limitAdmob: _limitAdmob,
           onPlayAgain: _reset,
           onContinuePlaying: _continueAfterAd,
+          onRevive: _continueWithRevive,
+          freeRevive: Wallet.instance.premium && !_freeReviveUsed,
         ),
       ),
     );
@@ -431,10 +440,23 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  void _restoreHealth() {
+  /// A revive (Premium's free one first, then bought ones) works like
+  /// watching the ad.
+  Future<void> _continueWithRevive() async {
+    if (Wallet.instance.premium && !_freeReviveUsed) {
+      _freeReviveUsed = true;
+      _restoreHealth(countsAsAd: false);
+    } else if (await Wallet.instance.useRevive()) {
+      _restoreHealth(countsAsAd: false);
+    } else if (mounted) {
+      await _showGameOverDialog(isNewBest: false);
+    }
+  }
+
+  void _restoreHealth({bool countsAsAd = true}) {
     if (!mounted) return;
     setState(() {
-      if (_limitAdmob > 0) _limitAdmob--;
+      if (countsAsAd && _limitAdmob > 0) _limitAdmob--;
       _health = widget.initialHealth;
     });
     _advance();
@@ -446,6 +468,7 @@ class _GameScreenState extends State<GameScreen> {
       _limitAdmob = widget.limitAdmob;
       _score = 0;
       _boostX = _startingBoost();
+      _freeReviveUsed = false;
       _stats.clear();
     });
     _startDeck();
@@ -509,8 +532,24 @@ class _GameScreenState extends State<GameScreen> {
     if (_allItems.isNotEmpty && _health > 0) _startDeck();
   }
 
+  void _onWalletChanged() {
+    if (!mounted) return;
+    // "Remove ads" or Premium bought: take the banner away right now.
+    if (Wallet.instance.adFree && _banner != null) {
+      _banner!.dispose();
+      setState(() => _banner = null);
+    } else {
+      setState(() {});
+    }
+  }
+
+  void _openShop() {
+    HapticFeedback.selectionClick();
+    ShopSheet.show(context);
+  }
+
   void _createBannerAd() {
-    if (!Constants.adsEnabled) return;
+    if (!Constants.adsEnabled || Wallet.instance.adFree) return;
     _banner = BannerAd(
       // A standard 320x50 banner fits every phone; the old full banner (468 wide) was cut off.
       size: AdSize.banner,
@@ -557,6 +596,7 @@ class _GameScreenState extends State<GameScreen> {
                   HapticFeedback.selectionClick();
                   _openSettings();
                 },
+                onShop: _openShop,
               ),
               Expanded(child: _buildBody()),
               if (_banner != null && Constants.adsEnabled)
@@ -605,6 +645,7 @@ class _GameScreenState extends State<GameScreen> {
             score: _score,
             best: max(SharedPreferencesHelper.getBestScore(), _score),
             boost: _boostX,
+            premium: Wallet.instance.premium,
             popKey: _answered && _correct ? token : null,
             points: _pointsEarned,
           ),
@@ -681,12 +722,14 @@ class _TopBar extends StatelessWidget {
     required this.maxHealth,
     required this.onLeaderboard,
     required this.onSettings,
+    required this.onShop,
   });
 
   final int health;
   final int maxHealth;
   final VoidCallback onLeaderboard;
   final VoidCallback onSettings;
+  final VoidCallback onShop;
 
   @override
   Widget build(BuildContext context) {
@@ -696,6 +739,7 @@ class _TopBar extends StatelessWidget {
         children: [
           HealthDisplay(currentHealth: health, maxHealth: maxHealth),
           const Spacer(),
+          IconButton(onPressed: onShop, tooltip: 'Shop', icon: const Icon(Icons.storefront_rounded, color: Colors.white)),
           IconButton(onPressed: onLeaderboard, tooltip: 'Leaderboard', icon: const Icon(Icons.leaderboard_rounded, color: Colors.white)),
           IconButton(onPressed: onSettings, tooltip: 'Settings', icon: const Icon(Icons.tune_rounded, color: Colors.white)),
         ],
@@ -705,10 +749,20 @@ class _TopBar extends StatelessWidget {
 }
 
 class _ScoreHeader extends StatelessWidget {
-  const _ScoreHeader({required this.score, required this.best, required this.boost, required this.popKey, required this.points});
+  const _ScoreHeader({
+    required this.score,
+    required this.best,
+    required this.boost,
+    required this.premium,
+    required this.popKey,
+    required this.points,
+  });
   final int score;
   final int best;
   final double boost;
+
+  /// Premium doubles the points; shown next to the best score.
+  final bool premium;
 
   /// Non-null right after a correct answer; a new value replays the score pop.
   final Object? popKey;
@@ -728,7 +782,19 @@ class _ScoreHeader extends StatelessWidget {
                 child: Text('Human or AI?', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, height: 1.1)),
               ),
               const SizedBox(height: 2),
-              Text('Best $best', style: const TextStyle(color: AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w600)),
+              Text.rich(
+                TextSpan(
+                  text: 'Best $best',
+                  children: [
+                    if (premium)
+                      const TextSpan(
+                        text: '  ⚡ 2× points',
+                        style: TextStyle(color: AppColors.combo, fontWeight: FontWeight.w800),
+                      ),
+                  ],
+                ),
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w600),
+              ),
             ],
           ),
         ),

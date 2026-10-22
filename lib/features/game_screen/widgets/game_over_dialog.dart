@@ -2,6 +2,8 @@ import 'package:animated_digit/animated_digit.dart';
 import 'package:flutter/material.dart';
 import 'package:games_services/games_services.dart';
 import 'package:humanai/features/game_screen/game_screen.dart' show RoundStats;
+import 'package:humanai/features/shop/shop_sheet.dart';
+import 'package:humanai/features/shop/wallet.dart';
 import 'package:humanai/models/game_item.dart';
 import 'package:humanai/utils/app_colors.dart';
 import 'package:humanai/utils/constants.dart';
@@ -15,6 +17,8 @@ class GameOverDialog extends StatelessWidget {
     required this.stats,
     required this.onPlayAgain,
     required this.onContinuePlaying,
+    required this.onRevive,
+    required this.freeRevive,
     required this.limitAdmob,
   });
 
@@ -24,6 +28,12 @@ class GameOverDialog extends StatelessWidget {
   final int limitAdmob;
   final VoidCallback onPlayAgain;
   final VoidCallback onContinuePlaying;
+
+  /// Continue by using up one revive from the shop.
+  final VoidCallback onRevive;
+
+  /// Premium's free revive for this run is still unused.
+  final bool freeRevive;
 
   static const _typeLabels = {
     MediaType.image: ('Images', Icons.image_rounded),
@@ -122,54 +132,124 @@ class GameOverDialog extends StatelessWidget {
               },
             ),
             const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.favorite_rounded, size: 20),
-                    label: const Text('Continue · watch ad'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.heart,
-                      disabledForegroundColor: AppColors.outline,
-                      side: BorderSide(color: canContinue ? AppColors.heart : AppColors.outline),
-                      minimumSize: const Size.fromHeight(50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-                    ),
-                    onPressed: canContinue
-                        ? () {
-                            Navigator.of(context).pop();
-                            onContinuePlaying();
-                          }
-                        : null,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: AppColors.outline),
-                    minimumSize: const Size(54, 50),
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  onPressed: () => _showLeaderboard(context),
-                  child: const Icon(Icons.leaderboard_rounded, semanticLabel: 'Leaderboard'),
-                ),
-              ],
-            ),
-            if (!canContinue)
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text(
-                  'No continues remaining today.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
-                ),
+            ListenableBuilder(
+              listenable: Wallet.instance,
+              builder: (context, _) => _ContinueOptions(
+                revives: Wallet.instance.revives,
+                freeRevive: freeRevive,
+                canWatchAd: canContinue,
+                onRevive: () {
+                  Navigator.of(context).pop();
+                  onRevive();
+                },
+                onWatchAd: () {
+                  Navigator.of(context).pop();
+                  onContinuePlaying();
+                },
+                onLeaderboard: () => _showLeaderboard(context),
               ),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Ways to keep the run going: a revive from the shop, a rewarded ad, or
+/// a way into the shop when the player has no revives.
+class _ContinueOptions extends StatelessWidget {
+  const _ContinueOptions({
+    required this.revives,
+    required this.freeRevive,
+    required this.canWatchAd,
+    required this.onRevive,
+    required this.onWatchAd,
+    required this.onLeaderboard,
+  });
+
+  final int revives;
+  final bool freeRevive;
+  final bool canWatchAd;
+  final VoidCallback onRevive;
+  final VoidCallback onWatchAd;
+  final VoidCallback onLeaderboard;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasRevives = freeRevive || revives > 0;
+    final continueButton = hasRevives
+        ? _outlined(
+            icon: freeRevive ? Icons.bolt_rounded : Icons.favorite_rounded,
+            label: freeRevive ? 'Free revive · Premium' : 'Revive · $revives left',
+            color: freeRevive ? AppColors.combo : AppColors.heart,
+            onPressed: onRevive,
+          )
+        : _outlined(
+            icon: Icons.favorite_rounded,
+            label: 'Continue · watch ad',
+            color: AppColors.heart,
+            onPressed: canWatchAd ? onWatchAd : null,
+          );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(child: continueButton),
+            const SizedBox(width: 10),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: const BorderSide(color: AppColors.outline),
+                minimumSize: const Size(54, 50),
+                padding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              onPressed: onLeaderboard,
+              child: const Icon(Icons.leaderboard_rounded, semanticLabel: 'Leaderboard'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        if (hasRevives && canWatchAd)
+          TextButton.icon(
+            onPressed: onWatchAd,
+            icon: const Icon(Icons.play_circle_outline_rounded, size: 18),
+            label: const Text('Keep revives · watch an ad instead'),
+            style: TextButton.styleFrom(foregroundColor: AppColors.textMuted, textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+          )
+        else
+          TextButton.icon(
+            onPressed: () => ShopSheet.show(context),
+            icon: const Icon(Icons.storefront_rounded, size: 18),
+            label: const Text('Skip the ad · get revives'),
+            style: TextButton.styleFrom(foregroundColor: AppColors.textMuted, textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+          ),
+        if (!hasRevives && !canWatchAd)
+          const Text(
+            'No continues remaining today.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+          ),
+      ],
+    );
+  }
+
+  Widget _outlined({required IconData icon, required String label, required Color color, required VoidCallback? onPressed}) {
+    return OutlinedButton.icon(
+      icon: Icon(icon, size: 20),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: color,
+        disabledForegroundColor: AppColors.outline,
+        side: BorderSide(color: onPressed != null ? color : AppColors.outline),
+        minimumSize: const Size.fromHeight(50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+      ),
+      onPressed: onPressed,
     );
   }
 }
