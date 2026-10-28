@@ -17,3 +17,12 @@ Rekord zapisuje się w localStorage.
   albo wyświetlić `index.html` w WebView.
 - Godot 4: nie da się uruchomić tego kodu JS w Godocie, ale logika (stany `idle/charging/flying/waiting/bite/reeling`)
   przenosi się 1:1 do GDScript. Model 3D z Blendera (.glb) można podpiąć jako rybaka/most.
+
+## Wersja 3D (`3d/`)
+three.js z prawdziwymi odbiciami w wodzie (`Water`, `Sky`). Ten sam system łowienia,
+płatki sakury spadają i płyną z prądem, ryby to cienie pod powierzchnią, a złowiona ryba wyskakuje na żyłce.
+Wszystko jest lokalnie w `3d/lib/` (three.js 0.160, licencja MIT), więc działa offline i w APK.
+Pliki trzeba otwierać przez serwer (moduły ES), np. `python3 -m http.server` w folderze `fishing-game`
+i potem `http://localhost:8000/3d/`.
+
+![Sakura River 3D](3d/screenshot.png)
