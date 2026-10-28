@@ -26,3 +26,15 @@ Pliki trzeba otwierać przez serwer (moduły ES), np. `python3 -m http.server` w
 i potem `http://localhost:8000/3d/`.
 
 ![Sakura River 3D](3d/screenshot.png)
+
+## APK na Androida (Capacitor)
+Projekt Android jest gotowy w `fishing-game/android/` (Capacitor 6, gra z `3d/`, tylko pionowo).
+
+```bash
+cd fishing-game
+npm install
+npx cap sync android     # kopiuje 3d/ do aplikacji (zrób to po każdej zmianie gry)
+npx cap open android     # otwiera Android Studio → Run ▶ albo Build → Build APK(s)
+```
+Bez Android Studio, gdy masz zainstalowany Android SDK: `cd android && ./gradlew assembleDebug`.
+Gotowe APK będzie w `android/app/build/outputs/apk/debug/app-debug.apk`.

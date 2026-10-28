@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Sakura River</string>
+    <string name="title_activity_main">Sakura River</string>
+    <string name="package_name">inu.night.sakurariver</string>
+    <string name="custom_url_scheme">inu.night.sakurariver</string>
+</resources>
