@@ -213,6 +213,19 @@ Android build notes (Flutter 3.44): Android Gradle Plugin 8.9.1, Kotlin 2.1.0, G
 Test on a real Android device before publishing: the redesign was verified on the iOS simulator, and
 on Android only the debug and release builds were compiled.
 
+## Fishing game (`fishing-game/`)
+
+A separate fishing game, not part of the Human or AI app. Full description: [`fishing-game/README.md`](fishing-game/README.md).
+
+- `fishing-game/index.html`: a 2D version (canvas, plain JS).
+- `fishing-game/3d/`: Sakura River 3D (three.js, bundled locally) with water reflections, shader grass and Blender models
+  from `JakubJakubiak/sakura-river` (trees, bridge, pagoda, lanterns, Fuji). Run `python3 -m http.server` in `fishing-game`
+  and open `http://localhost:8000/3d/`.
+- How to play: hold to charge the cast and release to cast. When the bobber dives, tap. While reeling, hold to reel in
+  and let go when the tension bar turns red. Species: roach, perch, carp, trout, koi, pike.
+- Android: `fishing-game/android/` (Capacitor). `npm install && npx cap sync android && npx cap open android`.
+- Chat version for streams: the `view=fishing` view in the sakura-river repo (`!wedka`, `!zatnij`).
+
 ## Known gaps
 
 - Ad consent is granted in code (`main.dart`); players in the EU need a consent dialog.
