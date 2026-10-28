@@ -426,6 +426,65 @@ loadParts('models/bridge.glb').then(parts => {
   bridge.visible = false; scene.add(g);
 }).catch(err => console.warn('bridge.glb not loaded, keeping code bridge', err));
 
+/* ---------- the far bank: pagoda, stone lanterns, a forest of cherries, Fuji behind (all from sakura-river) ---------- */
+const FAR_Y = 1.5, FAR_EDGE = -22.5;
+const TRSm = (x, y, z, ry, sc) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, ry, 0)), new THREE.Vector3(sc, sc, sc));
+async function placeModel(url, matrices, over = {}) {
+  const parts = await loadParts(url);
+  for (const o of parts) {
+    const mat = over[o.mat] || BMAT[o.mat] || BMAT.wall;
+    const im = new THREE.InstancedMesh(o.geo, mat, matrices.length);
+    matrices.forEach((m, i) => im.setMatrixAt(i, m));
+    im.frustumCulled = false; scene.add(im);
+  }
+}
+placeModel('models/pagoda.glb', [TRSm(5, FAR_Y - 0.3, -40, -0.3, 1.1)]).catch(e => console.warn('pagoda.glb', e));
+placeModel('models/lantern.glb', [-30, -20, 4, 24, 34].map((x, i) => TRSm(x, FAR_Y - 0.1, FAR_EDGE - 2.2, i * 1.1, 0.92)),
+  { glow: new THREE.MeshBasicMaterial({ color: 0xffd28a }) }).catch(e => console.warn('lantern.glb', e));
+// cherry forest on the far bank: the light "Tree_far" variant, many copies, plus full trees in front
+loadParts('models/tree.glb').then(parts => {
+  const bark = parts.find(q => q.name === 'Tree_far_bark'), crown = parts.find(q => q.name === 'Tree_far_blossom');
+  if (!bark || !crown) return;
+  radialNormals(crown.geo);
+  const spots = [];
+  let sd = 4242; const fr = () => (sd = sd * 16807 % 2147483647) / 2147483647;
+  for (let i = 0; i < 140; i++) {
+    const x = -70 + fr() * 140, z = FAR_EDGE - 6 - fr() * 34;
+    if (Math.hypot(x - 5, z + 40) < 10) continue;           // keep the pagoda clear
+    spots.push({ x, z, sc: 1.0 + fr() * 0.7, rot: fr() * TAU, c: SAKURA_PINKS[(fr() * 4) | 0] });
+  }
+  const col = new THREE.Color(), WHITE = new THREE.Color(1, 1, 1);
+  for (const [geo, mat, w] of [[bark.geo, treeBarkMat, null], [crown.geo, blossomMat, 0.3]]) {
+    const im = new THREE.InstancedMesh(geo, mat, spots.length);
+    spots.forEach((t, k) => { dummy.position.set(t.x, FAR_Y - 0.1, t.z); dummy.rotation.set(0, t.rot, 0); dummy.scale.setScalar(t.sc); dummy.updateMatrix();
+      im.setMatrixAt(k, dummy.matrix); if (w !== null) im.setColorAt(k, col.copy(t.c).lerp(WHITE, w)); });
+    im.frustumCulled = false; scene.add(im);
+  }
+}).catch(() => {});
+// Fuji: vertex colours carry R = snow, G = gully darkening, B = forest on the lower slopes
+loadParts('models/fuji.glb').then(parts => {
+  const geo = parts[0].geo; geo.computeBoundingBox();
+  const H = geo.boundingBox.max.y;
+  const mat = new THREE.ShaderMaterial({ fog: false,
+    uniforms: { uLight: { value: sun.clone().normalize() }, uH: { value: H } },
+    vertexShader: `attribute vec4 color; varying vec4 vC; varying vec3 vN; varying float vY;
+      void main(){ vC = color; vN = normalize(mat3(modelMatrix)*normal); vY = position.y; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+    fragmentShader: `varying vec4 vC; varying vec3 vN; varying float vY; uniform vec3 uLight; uniform float uH;
+      void main(){
+        float t = clamp(vY/uH, 0.0, 1.0), lam = clamp(dot(normalize(vN), normalize(uLight)), 0.0, 1.0);
+        vec3 body = vec3(0.48, 0.47, 0.62), forest = vec3(0.32, 0.42, 0.36), snow = vec3(1.0, 0.95, 0.97), haze = vec3(0.98, 0.84, 0.88);
+        vec3 c = mix(body, forest, vC.b) * (1.0 - vC.g * 0.35);
+        c = mix(c, snow, vC.r);
+        c *= 0.62 + lam * 0.5;
+        c = mix(c, haze, 0.45 * (1.0 - t * 0.6));          // aerial haze: far and low is paler
+        gl_FragColor = vec4(c, 1.0);
+        #include <colorspace_fragment>
+      }` });
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(-40, -4, -420); m.scale.setScalar(1.0);
+  scene.add(m);
+}).catch(e => console.warn('fuji.glb', e));
+
 // ---------- first-person rod (no fisherman model, only the rod is visible) ----------
 
 
