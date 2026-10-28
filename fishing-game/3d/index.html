@@ -28,42 +28,51 @@
 <script type="module">
 import * as THREE from 'three';
 import { Water } from './lib/Water.js';
-import { Sky } from './lib/Sky.js';
+import { GLTFLoader } from './lib/GLTFLoader.js';
+
+const rnd = (a, b) => a + Math.random() * (b - a);
+const dummy = new THREE.Object3D();
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.6;
+renderer.toneMappingExposure = 0.85;
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0xf3c9d6, 40, 140);
+scene.fog = new THREE.Fog(0xfde2e4, 45, 160);
 const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 1000);
 function placeCamera() {
   const portrait = innerHeight > innerWidth;
   camera.fov = portrait ? 70 : 55; camera.updateProjectionMatrix();
-  camera.position.set(5, portrait ? 7 : 5.5, portrait ? 18 : 16);
-  camera.lookAt(-2, 0.5, -5);
+  camera.position.set(3, 2.6, 12.5);
+  camera.lookAt(-1, 0, -6);
 }
 placeCamera();
 
 // ---------- sky & light ----------
-const sun = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(84), THREE.MathUtils.degToRad(200));
-const sky = new Sky();
-sky.scale.setScalar(1000);
-Object.assign(sky.material.uniforms, {});
-sky.material.uniforms.turbidity.value = 6;
-sky.material.uniforms.rayleigh.value = 2.5;
-sky.material.uniforms.mieCoefficient.value = 0.006;
-sky.material.uniforms.mieDirectionalG.value = 0.85;
-sky.material.uniforms.sunPosition.value.copy(sun);
+const sun = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(76), THREE.MathUtils.degToRad(195));
+// gradient sky with the same colours as the 2D Sakura River version
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: { top: { value: new THREE.Color(0xf7b2c4) }, mid: { value: new THREE.Color(0xfde2e4) }, bottom: { value: new THREE.Color(0xd6ecf0) },
+    sunDir: { value: sun.clone().normalize() }, sunCol: { value: new THREE.Color(0xfff3c4) } },
+  vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+  fragmentShader: `uniform vec3 top, mid, bottom, sunDir, sunCol; varying vec3 vDir;
+    void main(){ float h = clamp(vDir.y, 0.0, 1.0);
+      vec3 c = h < 0.25 ? mix(bottom, mid, h / 0.25) : mix(mid, top, (h - 0.25) / 0.75);
+      float d = dot(normalize(vDir), normalize(sunDir));
+      c = mix(c, sunCol, smoothstep(0.9975, 0.999, d)) + sunCol * pow(max(d, 0.0), 60.0) * 0.25;
+      gl_FragColor = vec4(c, 1.0); }`,
+});
+const sky = new THREE.Mesh(new THREE.SphereGeometry(500, 32, 16), skyMat);
 scene.add(sky);
 const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environment = pmrem.fromScene(sky).texture;
+{ const envScene = new THREE.Scene(); envScene.add(sky.clone()); scene.environment = pmrem.fromScene(envScene).texture; }
 
-scene.add(new THREE.HemisphereLight(0xffe0ea, 0x445533, 1.2));
-const dir = new THREE.DirectionalLight(0xffd7b0, 2.2);
+scene.add(new THREE.HemisphereLight(0xffeef2, 0x6a7a55, 2.2));
+const dir = new THREE.DirectionalLight(0xffe2c8, 2.8);
 dir.position.copy(sun).multiplyScalar(50);
 scene.add(dir);
 
@@ -94,15 +103,55 @@ const water = new Water(new THREE.PlaneGeometry(400, 400), {
   textureWidth: 512, textureHeight: 512,
   waterNormals: makeWaterNormals(),
   sunDirection: sun.clone().normalize(),
-  sunColor: 0xffe6d0, waterColor: 0x123f4d, distortionScale: 3, fog: true,
+  sunColor: 0xffe6d0, waterColor: 0x2f7f96, distortionScale: 3.5, fog: true, alpha: 0.7,
 });
 water.rotation.x = -Math.PI / 2;
 water.material.uniforms.size.value = 3;
+water.material.transparent = true;
+water.renderOrder = 2;
 scene.add(water);
+
+// ---------- riverbed seen through the water ----------
+const BED_Y = -2.2;
+const bed = new THREE.Mesh(new THREE.PlaneGeometry(200, 40, 100, 20), new THREE.MeshStandardMaterial({ color: 0x8a7a55, roughness: 1 }));
+bed.rotation.x = -Math.PI / 2; bed.position.set(0, BED_Y, -7);
+{ const pos = bed.geometry.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i); // plane y == world -z offset
+    const edge = Math.min(1, Math.abs(y) / 20);
+    pos.setZ(i, Math.sin(pos.getX(i) * 0.4) * 0.15 + Math.cos(y * 0.7) * 0.1 + edge * edge * 2.4);
+  }
+  bed.geometry.computeVertexNormals(); }
+scene.add(bed);
+const stoneGeo = new THREE.DodecahedronGeometry(0.5, 0);
+const stoneMat = new THREE.MeshStandardMaterial({ color: 0x77736b, roughness: 0.9, flatShading: true });
+const stones = new THREE.InstancedMesh(stoneGeo, stoneMat, 160);
+for (let i = 0; i < 160; i++) {
+  dummy.position.set(rnd(-40, 40), BED_Y + 0.1, rnd(-20, 7));
+  dummy.rotation.set(rnd(0, 3), rnd(0, 3), rnd(0, 3)); dummy.scale.set(rnd(0.4, 1.4), rnd(0.3, 0.7), rnd(0.4, 1.2));
+  dummy.updateMatrix(); stones.setMatrixAt(i, dummy.matrix);
+  stones.setColorAt(i, new THREE.Color().setHSL(0.08, 0.1, rnd(0.3, 0.55)));
+}
+scene.add(stones);
+const weedGeo = new THREE.ConeGeometry(0.06, 1.6, 3); weedGeo.translate(0, 0.8, 0);
+const WEEDS = 300;
+const weeds = new THREE.InstancedMesh(weedGeo, new THREE.MeshStandardMaterial({ color: 0x2f7a3d }), WEEDS);
+const weedBase = Array.from({ length: WEEDS }, () => ({ x: rnd(-40, 40), z: rnd(-19, 7), s: rnd(0.5, 1.3), ph: rnd(0, 6) }));
+scene.add(weeds);
+function updateWeeds(t) {
+  weedBase.forEach((w, i) => {
+    dummy.position.set(w.x, BED_Y, w.z); dummy.rotation.set(Math.sin(t + w.ph) * 0.25, 0, Math.cos(t * 0.8 + w.ph) * 0.2);
+    dummy.scale.set(1, w.s, 1); dummy.updateMatrix(); weeds.setMatrixAt(i, dummy.matrix);
+  });
+  weeds.instanceMatrix.needsUpdate = true;
+}
+// soft light rays under the surface
+const caustic = new THREE.Mesh(new THREE.PlaneGeometry(200, 40), new THREE.MeshBasicMaterial({ color: 0xbff6ff, transparent: true, opacity: 0.06, depthWrite: false }));
+caustic.rotation.x = -Math.PI / 2; caustic.position.set(0, BED_Y + 0.05, -7); scene.add(caustic);
 
 // ---------- banks ----------
 const grassMat = new THREE.MeshStandardMaterial({ color: 0x7fa36a, roughness: 1 });
-const dirtMat = new THREE.MeshStandardMaterial({ color: 0x7a5b3a, roughness: 1 });
+const dirtMat = new THREE.MeshStandardMaterial({ color: 0x5c4a32, roughness: 1 });
 const nearBank = new THREE.Mesh(new THREE.BoxGeometry(200, 2, 30), dirtMat);
 nearBank.position.set(0, -0.4, 24); scene.add(nearBank);
 const nearGrass = new THREE.Mesh(new THREE.BoxGeometry(200, 0.2, 29), grassMat);
@@ -155,31 +204,67 @@ function sakura(x, z, s = 1) {
     b.scale.setScalar((1.1 + (i * 7 % 5) * 0.15) * s);
     t.add(b); blossoms.push(b);
   }
-  t.position.set(x, 0.7, z);
+  t.position.set(x, 0.7, z); t.userData.s = s;
   scene.add(t);
   return t;
 }
-sakura(12, 10.5, 1.2); sakura(-24, 11, 1.3); sakura(18, 13, 1.1);
-sakura(-30, -24, 1.5); sakura(-8, -25, 1.3); sakura(10, -26, 1.6); sakura(28, -24, 1.4);
+const sakuraTrees = [sakura(12, 10.5, 1.2), sakura(-24, 11, 1.3), sakura(18, 13, 1.1),
+  sakura(-30, -24, 1.5), sakura(-8, -25, 1.3), sakura(10, -26, 1.6), sakura(28, -24, 1.4)];
 
-// ---------- fisherman & rod ----------
-const man = new THREE.Group();
-const mk = (geo, color, y) => { const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color })); m.position.y = y; man.add(m); return m; };
-mk(new THREE.CylinderGeometry(0.35, 0.35, 1.2, 10), 0x2d4a6b, 0.6);
-mk(new THREE.CylinderGeometry(0.42, 0.38, 1.1, 10), 0xc0392b, 1.7);
-mk(new THREE.SphereGeometry(0.32, 12, 10), 0xf1c27d, 2.55);
-mk(new THREE.ConeGeometry(0.7, 0.4, 16), 0xd9c27a, 2.9); // straw hat
-man.position.set(4.5, 0.8, 9.5);
-scene.add(man);
+// ---------- grass in the foreground ----------
+const bladeGeo = new THREE.ConeGeometry(0.03, 0.4, 3); bladeGeo.translate(0, 0.3, 0);
+const BLADES = 2500;
+const grass = new THREE.InstancedMesh(bladeGeo, new THREE.MeshStandardMaterial({ color: 0x6f9a4f, roughness: 1 }), BLADES);
+const grassBase = [];
+for (let i = 0; i < BLADES; i++) {
+  const x = rnd(-12, 14), z = rnd(9.7, 12.6), s = rnd(0.5, 1.3);
+  grassBase.push({ x, z, s, lean: rnd(-0.3, 0.3), ph: rnd(0, 6) });
+  grass.setColorAt(i, new THREE.Color().setHSL(0.27 + rnd(-0.03, 0.04), 0.45, rnd(0.3, 0.45)));
+}
+scene.add(grass);
+function updateGrass(t) {
+  for (let i = 0; i < BLADES; i++) {
+    const b = grassBase[i];
+    dummy.position.set(b.x, 0.8, b.z);
+    dummy.rotation.set(Math.sin(t * 1.5 + b.ph + b.x * 0.3) * 0.15 + b.lean, 0, b.lean * 0.5);
+    dummy.scale.set(1, b.s, 1); dummy.updateMatrix();
+    grass.setMatrixAt(i, dummy.matrix);
+  }
+  grass.instanceMatrix.needsUpdate = true;
+}
+
+// ---------- optional Blender models ----------
+// Export from Blender as glTF Binary (.glb) to 3d/models/. If a file is missing, the built-in shapes stay.
+const loader = new GLTFLoader();
+function useModel(url, replace) {
+  loader.load(url, gltf => {
+    gltf.scene.traverse(o => { if (o.isMesh) o.material.side = THREE.FrontSide; });
+    replace(gltf.scene);
+  }, undefined, () => {});
+}
+useModel('models/bridge.glb', m => {
+  m.position.copy(bridge.position); bridge.visible = false; scene.add(m);
+});
+useModel('models/fish.glb', m => { fishProto = m; });  // model should face +X
+useModel('models/sakura.glb', m => {
+  for (const t of sakuraTrees) {
+    const c = m.clone(); c.position.copy(t.position); c.scale.multiplyScalar(t.userData.s);
+    c.rotation.y = Math.random() * Math.PI * 2; t.visible = false; scene.add(c);
+  }
+});
+
+// ---------- first-person rod (no fisherman model, only the rod is visible) ----------
+
 
 const rodPivot = new THREE.Group();
-rodPivot.position.set(4.1, 2.4, 9.2);
-scene.add(rodPivot);
-const rodLen = 6;
-const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.07, rodLen, 6), new THREE.MeshStandardMaterial({ color: 0x3b2a1a }));
+rodPivot.position.set(0.55, -0.75, -0.6); // held in the player's hand, bottom right of the view
+rodPivot.rotation.order = 'ZXY'; rodPivot.rotation.z = 0.35;
+camera.add(rodPivot); scene.add(camera);
+const rodLen = 3.2;
+const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.035, rodLen, 8), new THREE.MeshStandardMaterial({ color: 0x3b2a1a }));
 rod.position.y = rodLen / 2; rodPivot.add(rod);
 const rodTipObj = new THREE.Object3D(); rodTipObj.position.y = rodLen; rodPivot.add(rodTipObj);
-const REST_TILT = -0.75; // leaning over the water (towards -z)
+const REST_TILT = -1.2; // leaning over the water (towards -z)
 rodPivot.rotation.x = REST_TILT;
 
 const linePts = Array.from({ length: 20 }, () => new THREE.Vector3());
@@ -217,7 +302,6 @@ function newPetal(p, anyHeight) {
   p.spin = 1 + Math.random() * 2; p.fall = 0.5 + Math.random() * 0.6; p.life = 0;
   return p;
 }
-const dummy = new THREE.Object3D();
 const RIVER_NEAR = 8.5, RIVER_FAR = -22;
 function updatePetals(dt, t) {
   for (let i = 0; i < PETALS; i++) {
@@ -252,14 +336,21 @@ const SPECIES = [
   { name: 'Koi',      color: 0xfff4ec, fin: 0xe8562a, len: 1.3, speed: 1.3, pts: 60, fight: 1.3, weight: 1.5 },
   { name: 'Szczupak', color: 0x6f8f3a, fin: 0xc7b04a, len: 1.7, speed: 3.0, pts: 80, fight: 2.0, weight: 1 },
 ];
-const rnd = (a, b) => a + Math.random() * (b - a);
 function pickSpecies() {
   let r = Math.random() * SPECIES.reduce((s, x) => s + x.weight, 0);
   for (const s of SPECIES) if ((r -= s.weight) < 0) return s;
   return SPECIES[0];
 }
+let fishProto = null; // set when models/fish.glb exists
 function fishModel(sp, shadow) {
   const g = new THREE.Group();
+  if (fishProto && !shadow) {
+    const c = fishProto.clone();
+    const size = new THREE.Box3().setFromObject(c).getSize(new THREE.Vector3());
+    c.scale.multiplyScalar(sp.len / Math.max(size.x, size.y, size.z));
+    g.add(c); g.userData.tail = new THREE.Object3D();
+    return g;
+  }
   const mat = shadow
     ? new THREE.MeshBasicMaterial({ color: 0x06202a, transparent: true, opacity: 0.45, depthWrite: false })
     : new THREE.MeshStandardMaterial({ color: sp.color, roughness: 0.4, metalness: 0.3 });
@@ -275,9 +366,9 @@ function fishModel(sp, shadow) {
 const fish = [];
 function spawnFish(anywhere) {
   const sp = pickSpecies(), d = Math.random() < 0.5 ? 1 : -1;
-  const m = fishModel(sp, true);
+  const m = fishModel(sp, false); m.userData.depth = rnd(-1.6, -0.5);
   const f = { sp, m, dir: d, x: anywhere ? rnd(-25, 25) : -30 * d, z: rnd(RIVER_FAR + 3, RIVER_NEAR - 2), phase: rnd(0, 6), speed: sp.speed * rnd(0.7, 1.3), interest: 0 };
-  m.position.set(f.x, -0.05, f.z); scene.add(m); fish.push(f);
+  m.position.set(f.x, m.userData.depth, f.z); scene.add(m); fish.push(f);
 }
 for (let i = 0; i < 8; i++) spawnFish(true);
 
@@ -344,7 +435,7 @@ function update(dt) {
       f.z = Math.min(RIVER_NEAR - 1, Math.max(RIVER_FAR + 2, f.z));
       f.m.rotation.y = f.dir > 0 ? 0 : Math.PI;
     }
-    f.m.position.set(f.x, -0.05, f.z);
+    f.m.position.set(f.x, f === g.biter || (g.state === 'waiting' && f.interest > 0) ? THREE.MathUtils.lerp(f.m.position.y, -0.5, 0.05) : f.m.userData.depth + Math.sin(f.phase * 0.1) * 0.1, f.z);
     f.m.userData.tail.rotation.y = Math.sin(f.phase) * 0.5;
     if (Math.abs(f.x) > 32) { scene.remove(f.m); fish.splice(i, 1); }
   }
@@ -420,6 +511,9 @@ function update(dt) {
   }
   for (let i = 0; i < blossoms.length; i++) blossoms[i].rotation.y = Math.sin(t * 0.8 + i) * 0.08;
   updatePetals(dt, t);
+  updateGrass(t);
+  updateWeeds(t);
+  caustic.material.opacity = 0.05 + Math.sin(t * 1.3) * 0.02;
   updateUI(dt);
 }
 
