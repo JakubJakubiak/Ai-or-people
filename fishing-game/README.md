@@ -1,7 +1,7 @@
-# Rybak przy moście
+# Sakura River
 
 Prosta gra wędkarska w jednym pliku (`index.html`, czysty JS + canvas, bez bibliotek).
-Widok jak w akwarium: przekrój rzeki, kamienny most, rybak z wędką na brzegu.
+Widok jak w akwarium: przekrój rzeki, czerwony japoński most, kwitnące wiśnie, spadające płatki, rybak z wędką na brzegu.
 
 ## Sterowanie
 1. Przytrzymaj palec (albo spację), żeby naładować siłę rzutu, i puść, żeby zarzucić.
@@ -9,7 +9,7 @@ Widok jak w akwarium: przekrój rzeki, kamienny most, rybak z wędką na brzegu.
 3. Hol: trzymaj, żeby zwijać. Puść, kiedy pasek napięcia robi się czerwony, bo inaczej linka pęknie.
    Jeśli puszczasz za długo, ryba się zerwie.
 
-Gatunki: płotka, okoń, karp, pstrąg, szczupak. Im rzadsza ryba, tym więcej punktów i tym mocniej walczy.
+Gatunki: płotka, okoń, karp, pstrąg, szczupak, koi. Im rzadsza ryba, tym więcej punktów i tym mocniej walczy.
 Rekord zapisuje się w localStorage.
 
 ## Android
