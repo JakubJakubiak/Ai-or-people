@@ -276,6 +276,26 @@ const bobber = new THREE.Group();
 const bTop = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xe74c3c }));
 const bBot = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xffffff }));
 bobber.add(bTop, bBot);
+
+// Blender rod: base at origin, rod along +Y. An empty named "tip" marks where the line starts (else the top is used).
+useModel('models/rod.glb', m => {
+  const box = new THREE.Box3().setFromObject(m), size = box.getSize(new THREE.Vector3());
+  const k = rodLen / size.y;
+  m.scale.multiplyScalar(k); m.position.y = -box.min.y * k;
+  rod.visible = false; rodPivot.add(m); m.updateMatrixWorld(true);
+  const tip = m.getObjectByName('tip') || m.getObjectByName('Tip');
+  if (tip) rodTipObj.position.copy(rodPivot.worldToLocal(tip.getWorldPosition(new THREE.Vector3())));
+  else rodTipObj.position.set(0, rodLen, 0);
+});
+// Blender bobber: origin at the waterline, ~0.6 m tall (auto-scaled). An empty named "line" marks where the line ties on.
+let bobberLineOffset = new THREE.Vector3();
+useModel('models/bobber.glb', m => {
+  const size = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());
+  m.scale.multiplyScalar(0.6 / Math.max(size.x, size.y, size.z));
+  bTop.visible = bBot.visible = false; bobber.add(m); m.updateMatrixWorld(true);
+  const tie = m.getObjectByName('line') || m.getObjectByName('Line');
+  if (tie) bobberLineOffset = bobber.worldToLocal(tie.getWorldPosition(new THREE.Vector3()));
+});
 scene.add(bobber);
 
 // ripples
@@ -494,10 +514,11 @@ function update(dt) {
   line.visible = bobber.visible = showLine;
   if (showLine) {
     bobber.position.set(g.bob.x, g.bob.y + g.sink + 0.05, g.bob.z);
+    const bobberTie = bobber.position.clone().add(bobberLineOffset);
     const sag = g.state === 'reeling' || g.state === 'caught' ? 0.1 : 1.2;
     for (let i = 0; i < linePts.length; i++) {
       const k = i / (linePts.length - 1);
-      linePts[i].lerpVectors(tip, bobber.position, k);
+      linePts[i].lerpVectors(tip, bobberTie, k);
       linePts[i].y -= Math.sin(k * Math.PI) * sag;
     }
     lineGeo.setFromPoints(linePts);
