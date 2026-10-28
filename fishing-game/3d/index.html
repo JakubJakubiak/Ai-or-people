@@ -151,11 +151,12 @@ caustic.rotation.x = -Math.PI / 2; caustic.position.set(0, BED_Y + 0.05, -7); sc
 
 // ---------- banks ----------
 const grassMat = new THREE.MeshStandardMaterial({ color: 0x7fa36a, roughness: 1 });
-const dirtMat = new THREE.MeshStandardMaterial({ color: 0x5c4a32, roughness: 1 });
+const dirtMat = new THREE.MeshStandardMaterial({ color: 0x3f4a26, roughness: 1 });
 const nearBank = new THREE.Mesh(new THREE.BoxGeometry(200, 2, 30), dirtMat);
-nearBank.position.set(0, -0.4, 24); scene.add(nearBank);
-const nearGrass = new THREE.Mesh(new THREE.BoxGeometry(200, 0.2, 29), grassMat);
-nearGrass.position.set(0, 0.7, 24.5); scene.add(nearGrass);
+nearBank.position.set(0, -0.4, 24.4); scene.add(nearBank);
+
+const nearGrass = new THREE.Mesh(new THREE.BoxGeometry(200, 0.2, 30), new THREE.MeshStandardMaterial({ color: 0x4f6e32, roughness: 1 }));
+nearGrass.position.set(0, 0.7, 24.4); scene.add(nearGrass);
 const farBank = new THREE.Mesh(new THREE.BoxGeometry(200, 3, 40), grassMat);
 farBank.position.set(0, 0, -42); scene.add(farBank);
 for (let i = 0; i < 9; i++) {
@@ -211,27 +212,53 @@ function sakura(x, z, s = 1) {
 const sakuraTrees = [sakura(12, 10.5, 1.2), sakura(-24, 11, 1.3), sakura(18, 13, 1.1),
   sakura(-30, -24, 1.5), sakura(-8, -25, 1.3), sakura(10, -26, 1.6), sakura(28, -24, 1.4)];
 
-// ---------- grass in the foreground ----------
-const bladeGeo = new THREE.ConeGeometry(0.03, 0.4, 3); bladeGeo.translate(0, 0.3, 0);
-const BLADES = 2500;
-const grass = new THREE.InstancedMesh(bladeGeo, new THREE.MeshStandardMaterial({ color: 0x6f9a4f, roughness: 1 }), BLADES);
-const grassBase = [];
+// ---------- grass shader: thin curved blades, colour gradient, wind on the GPU ----------
+function bladeGeometry() {
+  // 5 segments, tapering to a point, bent forward a little
+  const segs = 5, w = 0.045, h = 1, pos = [], uv = [], idx = [];
+  for (let i = 0; i <= segs; i++) {
+    const t = i / segs, half = w * (1 - t) * 0.5, bend = t * t * 0.25;
+    pos.push(-half, t * h, bend, half, t * h, bend);
+    uv.push(0, t, 1, t);
+    if (i < segs) { const k = i * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx); geo.computeVertexNormals();
+  return geo;
+}
+const grassUniforms = { uTime: { value: 0 } };
+const grassMatShader = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, roughness: 0.85 });
+grassMatShader.onBeforeCompile = sh => {
+  sh.uniforms.uTime = grassUniforms.uTime;
+  sh.vertexShader = 'uniform float uTime;\nvarying float vH;\n' + sh.vertexShader.replace('#include <begin_vertex>', `
+    #include <begin_vertex>
+    vH = uv.y;
+    vec3 ip = vec3(instanceMatrix[3][0], 0.0, instanceMatrix[3][2]);
+    float gust = sin(uTime * 1.6 + ip.x * 0.35 + ip.z * 0.6) * 0.5 + sin(uTime * 3.1 + ip.x * 1.3) * 0.2;
+    float bendK = uv.y * uv.y;
+    transformed.x += gust * 0.22 * bendK;
+    transformed.z += (gust * 0.12 - 0.04) * bendK;`);
+  sh.fragmentShader = 'varying float vH;\n' + sh.fragmentShader.replace('#include <color_fragment>', `
+    #include <color_fragment>
+    vec3 root = vec3(0.10, 0.22, 0.07), tipC = vec3(0.55, 0.78, 0.32);
+    diffuseColor.rgb *= mix(root, tipC, smoothstep(0.0, 1.0, vH)) * 1.6;`);
+};
+const BLADES = 14000;
+const grass = new THREE.InstancedMesh(bladeGeometry(), grassMatShader, BLADES);
 for (let i = 0; i < BLADES; i++) {
-  const x = rnd(-12, 14), z = rnd(9.7, 12.6), s = rnd(0.5, 1.3);
-  grassBase.push({ x, z, s, lean: rnd(-0.3, 0.3), ph: rnd(0, 6) });
-  grass.setColorAt(i, new THREE.Color().setHSL(0.27 + rnd(-0.03, 0.04), 0.45, rnd(0.3, 0.45)));
+  const x = rnd(-14, 16), z = rnd(9.35, 13.2);
+  const nearEdge = 1 - Math.min(1, (z - 9.4) / 0.8); // shorter at the water edge
+  const h = rnd(0.25, 0.6) * (1 - nearEdge * 0.6);
+  dummy.position.set(x, 0.8, z);
+  dummy.rotation.set(rnd(-0.15, 0.15), rnd(0, Math.PI * 2), rnd(-0.15, 0.15));
+  dummy.scale.set(rnd(0.8, 1.4), h, 1); dummy.updateMatrix();
+  grass.setMatrixAt(i, dummy.matrix);
+  grass.setColorAt(i, new THREE.Color().setHSL(0.25 + rnd(-0.03, 0.04), 0.5, rnd(0.45, 0.65)));
 }
 scene.add(grass);
-function updateGrass(t) {
-  for (let i = 0; i < BLADES; i++) {
-    const b = grassBase[i];
-    dummy.position.set(b.x, 0.8, b.z);
-    dummy.rotation.set(Math.sin(t * 1.5 + b.ph + b.x * 0.3) * 0.15 + b.lean, 0, b.lean * 0.5);
-    dummy.scale.set(1, b.s, 1); dummy.updateMatrix();
-    grass.setMatrixAt(i, dummy.matrix);
-  }
-  grass.instanceMatrix.needsUpdate = true;
-}
+function updateGrass(t) { grassUniforms.uTime.value = t; }
 
 // ---------- optional Blender models ----------
 // Export from Blender as glTF Binary (.glb) to 3d/models/. If a file is missing, the built-in shapes stay.
