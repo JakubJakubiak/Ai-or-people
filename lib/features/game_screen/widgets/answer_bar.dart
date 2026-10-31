@@ -99,20 +99,16 @@ class _AnswerButtonState extends State<_AnswerButton> {
 class RevealPanel extends StatelessWidget {
   const RevealPanel({
     super.key,
-    required this.correct,
     required this.isAi,
     required this.tip,
-    required this.pointsEarned,
     required this.nextLabel,
     required this.onNext,
     this.credit,
     this.autoAdvance,
   });
 
-  final bool correct;
   final bool isAi;
   final String tip;
-  final int pointsEarned;
   final String nextLabel;
   final VoidCallback onNext;
   final String? credit;
@@ -122,7 +118,7 @@ class RevealPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = correct ? AppColors.correct : AppColors.wrong;
+    const color = AppColors.wrong;
     final truth = isAi ? 'made by AI' : 'made by a human';
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -137,16 +133,14 @@ class RevealPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(correct ? Icons.check_circle_rounded : Icons.cancel_rounded, color: color, size: 26),
+              const Icon(Icons.cancel_rounded, color: color, size: 26),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  correct ? 'Correct — $truth' : 'Not quite — $truth',
-                  style: TextStyle(color: color, fontSize: 17, fontWeight: FontWeight.w800),
+                  'Not quite — $truth',
+                  style: const TextStyle(color: color, fontSize: 17, fontWeight: FontWeight.w800),
                 ),
               ),
-              if (correct)
-                Text('+$pointsEarned', style: const TextStyle(color: AppColors.combo, fontSize: 17, fontWeight: FontWeight.w900)),
             ],
           ),
           const SizedBox(height: 8),

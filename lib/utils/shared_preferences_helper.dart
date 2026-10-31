@@ -5,7 +5,6 @@ class SharedPreferencesHelper {
   static SharedPreferences? _prefs;
   static const String _bestScoreKey = 'bestScore';
   static const String _enabledTypesKey = 'enabledTypes';
-  static const String _howToPlaySeenKey = 'howToPlaySeen';
 
   // Initialize SharedPreferences instance
   static Future<void> initialize() async {
@@ -34,11 +33,5 @@ class SharedPreferencesHelper {
 
   static Future<void> setEnabledTypes(Set<MediaType> types) async {
     await _prefs?.setStringList(_enabledTypesKey, types.map((t) => t.name).toList());
-  }
-
-  static bool getHowToPlaySeen() => _prefs?.getBool(_howToPlaySeenKey) ?? false;
-
-  static Future<void> setHowToPlaySeen() async {
-    await _prefs?.setBool(_howToPlaySeenKey, true);
   }
 }

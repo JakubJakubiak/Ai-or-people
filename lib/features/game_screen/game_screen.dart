@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,7 +14,6 @@ import 'package:humanai/features/game_screen/widgets/daily_raking.dart';
 import 'package:humanai/features/game_screen/widgets/effects.dart';
 import 'package:humanai/features/game_screen/widgets/game_over_dialog.dart';
 import 'package:humanai/features/game_screen/widgets/healh_display.dart';
-import 'package:humanai/features/game_screen/widgets/how_to_play.dart';
 import 'package:humanai/features/game_screen/widgets/media_card.dart';
 import 'package:humanai/features/game_screen/widgets/setings_menu.dart';
 import 'package:humanai/features/shop/shop_sheet.dart';
@@ -25,6 +23,7 @@ import 'package:humanai/modules/admob_service.dart';
 import 'package:humanai/utils/app_colors.dart';
 import 'package:humanai/utils/constants.dart';
 import 'package:humanai/utils/shared_preferences_helper.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:video_player/video_player.dart';
 
 class GameScreen extends StatefulWidget {
@@ -47,9 +46,14 @@ class _GameScreenState extends State<GameScreen> {
 
   /// After this many dead links in a row we assume the connection is the problem.
   static const _maxBrokenInRow = 6;
-  static const _autoAdvanceDelay = Duration(milliseconds: 1800);
+  /// How long an image may take to appear. Image hosts can hang for 30 s, so
+  /// this is shorter than [_mediaTimeout].
+  static const _imageTimeout = Duration(seconds: 8);
 
-  /// A miss stays a little longer so the tip can be read; "Next" skips the wait.
+  /// A correct answer only shows the stamp, so the game moves on quickly.
+  static const _autoAdvanceDelay = Duration(milliseconds: 1100);
+
+  /// A miss stays longer so the tip can be read; "Next" skips the wait.
   static const _autoAdvanceDelayWrong = Duration(milliseconds: 2800);
 
   /// "Next" sits where the answer buttons were, so a quick double tap would
@@ -57,7 +61,23 @@ class _GameScreenState extends State<GameScreen> {
   static const _nextGuard = Duration(milliseconds: 500);
 
   final _repository = ContentRepository();
-  final _player = AudioPlayer();
+
+  // Music streams from its link: only a short stretch ahead of the playhead is
+  // downloaded, and it starts as soon as half a second is buffered.
+  final _player = AudioPlayer(
+    audioLoadConfiguration: const AudioLoadConfiguration(
+      androidLoadControl: AndroidLoadControl(
+        minBufferDuration: Duration(seconds: 15),
+        maxBufferDuration: Duration(seconds: 30),
+        bufferForPlaybackDuration: Duration(milliseconds: 500),
+        bufferForPlaybackAfterRebufferDuration: Duration(seconds: 2),
+      ),
+      darwinLoadControl: DarwinLoadControl(
+        preferredForwardBufferDuration: Duration(seconds: 15),
+        automaticallyWaitsToMinimizeStalling: false,
+      ),
+    ),
+  );
   final _audioSubscriptions = <StreamSubscription<dynamic>>[];
 
   List<GameItem> _allItems = const [];
@@ -88,6 +108,8 @@ class _GameScreenState extends State<GameScreen> {
   bool _connectionProblem = false;
   VideoPlayerController? _video;
   bool _audioWanted = false;
+  bool _imageLoaded = false;
+  bool _audioLoaded = false;
   bool _audioReady = false;
   Duration _audioPosition = Duration.zero;
   Duration _audioDuration = Duration.zero;
@@ -106,13 +128,14 @@ class _GameScreenState extends State<GameScreen> {
     _limitAdmob = widget.limitAdmob;
     _boostX = _startingBoost();
 
-    _player.setReleaseMode(ReleaseMode.loop);
+    _player.setLoopMode(LoopMode.one);
     _audioSubscriptions
-      ..add(_player.onDurationChanged.listen((d) {
-        if (mounted) setState(() => _audioDuration = d);
+      ..add(_player.durationStream.listen((d) {
+        if (mounted && d != null) setState(() => _audioDuration = d);
       }))
-      ..add(_player.onPositionChanged.listen((p) {
-        if (!mounted) return;
+      ..add(_player.positionStream.listen((p) {
+        // The position of the previous song lingers until the next one is loaded.
+        if (!mounted || !_audioLoaded) return;
         setState(() {
           _audioPosition = p;
           if (p > Duration.zero && !_audioReady) {
@@ -129,14 +152,6 @@ class _GameScreenState extends State<GameScreen> {
     _createBannerAd();
     _loadRewardedAd();
     Wallet.instance.addListener(_onWalletChanged);
-
-    if (!SharedPreferencesHelper.getHowToPlaySeen()) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (!mounted) return;
-        await HowToPlayDialog.show(context);
-        await SharedPreferencesHelper.setHowToPlaySeen();
-      });
-    }
   }
 
   @override
@@ -199,7 +214,9 @@ class _GameScreenState extends State<GameScreen> {
     _player.stop();
 
     _answered = false;
+    _imageLoaded = false;
     _audioWanted = false;
+    _audioLoaded = false;
     _audioReady = false;
     _audioPosition = Duration.zero;
     _audioDuration = Duration.zero;
@@ -208,7 +225,7 @@ class _GameScreenState extends State<GameScreen> {
     if (item != null) {
       switch (item.type) {
         case MediaType.image:
-          break;
+          _mediaWatchdog = Timer(_imageTimeout, () => _skipBroken(token));
         case MediaType.video:
           _startVideo(item, token);
         case MediaType.music:
@@ -240,7 +257,12 @@ class _GameScreenState extends State<GameScreen> {
     _audioWanted = true;
     _mediaWatchdog = Timer(_mediaTimeout, () => _skipBroken(token));
     try {
-      await _player.play(UrlSource(item.url));
+      await _player.setUrl(item.url);
+      if (!mounted || token != _mediaToken) return;
+      _audioLoaded = true;
+      if (_audioWanted) unawaited(_player.play());
+    } on PlayerInterruptedException {
+      // A newer song took over while this one was loading.
     } catch (e) {
       debugPrint('Audio failed (${item.url}): $e');
       _skipBroken(token);
@@ -280,8 +302,8 @@ class _GameScreenState extends State<GameScreen> {
     if (item == null) return;
     if (_audioWanted) {
       await _player.pause();
-    } else if (_audioReady) {
-      await _player.resume();
+    } else if (_audioLoaded) {
+      unawaited(_player.play());
     } else {
       unawaited(_startAudio(item, _mediaToken));
     }
@@ -677,6 +699,10 @@ class _GameScreenState extends State<GameScreen> {
                       onSeekAudio: _player.seek,
                       onToggleVideo: _toggleVideo,
                       onMediaError: () => _skipBroken(token),
+                      onMediaLoaded: () {
+                        _mediaStarted();
+                        if (mounted && token == _mediaToken && !_imageLoaded) setState(() => _imageLoaded = true);
+                      },
                       onZoom: _openZoom,
                     ),
                     if (_answered && _correct) Positioned.fill(child: SparkBurst(color: item.isAi ? AppColors.ai : AppColors.human)),
@@ -690,20 +716,21 @@ class _GameScreenState extends State<GameScreen> {
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,
             alignment: Alignment.bottomCenter,
-            child: _answered
+            // The tip panel is for misses only; a correct answer keeps the
+            // buttons in place and just shows the stamp on the card.
+            child: _answered && !_correct
                 ? RevealPanel(
                     key: ValueKey('reveal$token'),
-                    correct: _correct,
                     isAi: item.isAi,
                     tip: _tip,
-                    pointsEarned: _pointsEarned,
                     credit: item.credit,
                     nextLabel: _health <= 0 ? 'See results' : 'Next',
-                    autoAdvance: _correct ? _autoAdvanceDelay : _autoAdvanceDelayWrong,
+                    autoAdvance: _autoAdvanceDelayWrong,
                     onNext: _onNextTapped,
                   )
                 : AnswerButtons(
-                    enabled: _health > 0,
+                    // No guessing on an empty card while an image is still loading.
+                    enabled: !_answered && _health > 0 && (item.type != MediaType.image || _imageLoaded),
                     onAnswer: (ai) {
                       HapticFeedback.mediumImpact();
                       _answer(ai);

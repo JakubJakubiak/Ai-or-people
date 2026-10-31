@@ -24,6 +24,7 @@ class MediaCard extends StatelessWidget {
     required this.onSeekAudio,
     required this.onToggleVideo,
     required this.onMediaError,
+    required this.onMediaLoaded,
     required this.onZoom,
   });
 
@@ -39,6 +40,9 @@ class MediaCard extends StatelessWidget {
   final ValueChanged<Duration> onSeekAudio;
   final VoidCallback onToggleVideo;
   final VoidCallback onMediaError;
+
+  /// An image finished loading; videos and music report this themselves.
+  final VoidCallback onMediaLoaded;
   final VoidCallback onZoom;
 
   @override
@@ -64,7 +68,7 @@ class MediaCard extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             switch (item.type) {
-              MediaType.image => _ImageView(item: item, onError: onMediaError, onZoom: onZoom),
+              MediaType.image => _ImageView(item: item, onError: onMediaError, onLoaded: onMediaLoaded, onZoom: onZoom),
               MediaType.video => _VideoView(controller: videoController, onToggle: onToggleVideo),
               MediaType.music => _MusicView(
                   item: item,
@@ -92,6 +96,10 @@ class MediaCard extends StatelessWidget {
                 MediaType.video => Positioned(left: 0, right: 0, bottom: 76, child: Center(child: _VerdictStamp(isAi: item.isAi))),
                 MediaType.music => Positioned(top: 10, right: 10, child: _VerdictStamp(isAi: item.isAi)),
               },
+            // The panel below the card (with the credit) only opens after a
+            // miss, but CC licences need the author shown after a hit as well.
+            if (revealed && wasCorrect && item.credit != null)
+              Positioned(left: 12, right: 12, top: 62, child: _CreditLabel(credit: item.credit!)),
           ],
         ),
       ),
@@ -141,6 +149,23 @@ class _RoundIconButton extends StatelessWidget {
   }
 }
 
+class _CreditLabel extends StatelessWidget {
+  const _CreditLabel({required this.credit});
+  final String credit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(8)),
+        child: Text(credit, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 11)),
+      ),
+    );
+  }
+}
+
 class _VerdictStamp extends StatelessWidget {
   const _VerdictStamp({required this.isAi});
   final bool isAi;
@@ -177,9 +202,10 @@ class _VerdictStamp extends StatelessWidget {
 }
 
 class _ImageView extends StatelessWidget {
-  const _ImageView({required this.item, required this.onError, required this.onZoom});
+  const _ImageView({required this.item, required this.onError, required this.onLoaded, required this.onZoom});
   final GameItem item;
   final VoidCallback onError;
+  final VoidCallback onLoaded;
   final VoidCallback onZoom;
 
   @override
@@ -190,6 +216,10 @@ class _ImageView extends StatelessWidget {
         imageUrl: item.url,
         fit: BoxFit.cover,
         fadeInDuration: const Duration(milliseconds: 180),
+        imageBuilder: (context, image) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => onLoaded());
+          return Image(image: image, fit: BoxFit.cover);
+        },
         placeholder: (context, url) => const _Loading(),
         errorWidget: (context, url, error) {
           // A dead link should never cost the player a life: move on.

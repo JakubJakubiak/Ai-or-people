@@ -14,9 +14,9 @@ short tip on what gives AI away.
 |---|---|---|
 | <img src="docs/screenshots/video.jpg" width="240" alt="Video round with Human and AI buttons"> | <img src="docs/screenshots/reveal.jpg" width="240" alt="AI-generated image revealed with a tip"> | <img src="docs/screenshots/music.jpg" width="240" alt="Music round with equalizer"> |
 
-| Game over | Settings | How to play |
-|---|---|---|
-| <img src="docs/screenshots/results.jpg" width="240" alt="Game over with accuracy per media type"> | <img src="docs/screenshots/settings.jpg" width="240" alt="Settings with content type filter"> | <img src="docs/screenshots/how-to-play.jpg" width="240" alt="How to play dialog"> |
+| Game over | Settings |
+|---|---|
+| <img src="docs/screenshots/results.jpg" width="240" alt="Game over with accuracy per media type"> | <img src="docs/screenshots/settings.jpg" width="240" alt="Settings with content type filter"> |
 
 ## How the game works
 
@@ -24,10 +24,11 @@ short tip on what gives AI away.
 2. A round shows one image, video or song. Images can be opened full screen and zoomed; videos and
    music start by themselves.
 3. The player taps **Human** or **AI**.
-4. The card shows a verdict stamp (`AI-GENERATED` / `HUMAN-MADE`), the panel below says whether the
-   answer was right and gives a tip. For music the title, cover and credit appear only now, so they
-   cannot give the answer away.
-5. The next round starts by itself (1.8 s after a correct answer, 2.8 s after a miss); **Next** skips the wait.
+4. The card shows a verdict stamp (`AI-GENERATED` / `HUMAN-MADE`). After a miss a panel below it adds a
+   tip on what gives AI away. For music the title, cover and credit appear only now, so they cannot
+   give the answer away.
+5. The next round starts by itself (1.1 s after a correct answer, 2.8 s after a miss); **Next** skips the
+   wait after a miss.
 6. After the third miss the game over dialog shows the score, the best score and accuracy per media type.
 
 ### Scoring
@@ -46,8 +47,7 @@ builds, violet plasma from about x5.
 ### Other screens
 
 - **Settings** (top right): choose which content to practise (at least one type stays on), open the
-  daily streak and the how-to-play intro. The choice is remembered.
-- **How to play**: shown once on first launch.
+  daily streak. The choice is remembered.
 - **Leaderboard**: Google Play Games / Game Center (`games_services`).
 - **Game over**: *Play again* starts a new run; *Continue · watch ad* shows a rewarded ad and restores
   all lives while keeping the score. A revive from the shop (or Premium's free one) does the same without
@@ -118,7 +118,9 @@ The app has no backend. It downloads five JSON lists from the `jsonList` reposit
 
 Each list loads on its own, so one broken file only removes that kind of content. For every media type
 the deck holds the same number of AI and human items, so the type never gives the answer away. Media that
-fails to load is skipped without costing a life. Dead links are cleaned up, and new items proposed, by the
+fails to load, or does not appear in time (images 8 s, video and music 15 s), is skipped without costing
+a life. Music streams from its link with `just_audio`: playback starts after 0.5 s of buffer and only up
+to 30 s ahead is downloaded. Dead links are cleaned up, and new items proposed, by the
 GitHub Actions in `jsonList`.
 
 ## Project layout
@@ -138,7 +140,7 @@ lib/
     tips.dart                        tips shown after each answer
     streak_service.dart              daily streak
     widgets/                         media card, answer bar, effects (combo flame, sparks),
-                                     settings, how to play, game over, streak sheet
+                                     settings, game over, streak sheet
   utils/app_colors.dart              colours (shared with the website)
 test/content_repository_test.dart    parsing and deck tests
 test/wallet_test.dart                shop: paying out purchases, revives, Premium
@@ -157,8 +159,8 @@ store/                               store screenshots and the script that makes
 | Colours | `lib/utils/app_colors.dart` |
 | App icon | `lib/logoIcon/icon.webp` (Android), `lib/logoIcon/ios_icon.jpg` (iOS) |
 
-Saved on the device (`shared_preferences`): best score, enabled content types, whether the intro was
-shown, and the dates used for the daily streak.
+Saved on the device (`shared_preferences`): best score, enabled content types
+and the dates used for the daily streak.
 
 ## Adding content
 

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:humanai/features/game_screen/streak_service.dart';
 import 'package:humanai/features/game_screen/widgets/daily_raking.dart';
-import 'package:humanai/features/game_screen/widgets/how_to_play.dart';
 import 'package:humanai/models/game_item.dart';
 import 'package:humanai/utils/app_colors.dart';
 
@@ -83,11 +82,6 @@ class _SettingsMenuState extends State<SettingsMenu> {
                   isScrollControlled: true,
                   builder: (context) => SlidingMenuWidget(consecutiveDays: streak, onClose: () => Navigator.pop(context)),
                 ),
-              ),
-              _LinkTile(
-                icon: Icons.help_outline_rounded,
-                label: 'How to play',
-                onTap: () => HowToPlayDialog.show(context),
               ),
               const SizedBox(height: 10),
               FilledButton(
